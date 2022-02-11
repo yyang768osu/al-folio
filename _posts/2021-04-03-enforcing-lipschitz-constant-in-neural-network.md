@@ -6,7 +6,7 @@ comments: true
 description: How to enforce lipschitz constraint in neural networks?
 ---
 
-A function $$g(x)$$ is Lipschitz continous if there exists a constant $$L$$ such that $$\|g(x_1) - g(x_2)\| < L \|x_1 - x_2\|$$ for any $$x_1$$ and $$x_2$$ in its domain. $$L$$ is referred to as a Lipschitz constant of $$g$$. The need to enforce a certain Lipschitz constant of neural networks arises in many cases, with some examples listed below. Here we introduce a common technique used in many existing literatures.
+A function $$g(x)$$ is Lipschitz continuous if there exists a constant $$L$$ such that $$\|g(x_1) - g(x_2)\| < L \|x_1 - x_2\|$$ for any $$x_1$$ and $$x_2$$ in its domain. $$L$$ is referred to as a Lipschitz constant of $$g$$. The need to enforce a certain Lipschitz constant of neural networks arises in many cases, with some examples listed below. Here we introduce a common technique used in many existing literatures.
 
 * Guarantee invertibility in normalizing flows build with residual blocks 
   * [iResNet(ICML2019)](https://arxiv.org/abs/1811.00995)
@@ -16,11 +16,11 @@ A function $$g(x)$$ is Lipschitz continous if there exists a constant $$L$$ such
 * Improve network robustness against adversarial perturbations
   * [Lipschitz-margin-training(NIPS2018)](https://arxiv.org/abs/1802.04034)
 
-A small note before we proceed: Lipschitz continous/constant is defined with respect to a choice of the norm $$\|\cdot\|$$. Here we focus on 2-norm.
+A small note before we proceed: Lipschitz continuous/constant is defined with respect to a choice of the norm $$\|\cdot\|$$. Here we focus on 2-norm.
 
 ## Lipschitz constant vs spectral norm of matrices
 
-Deep neural networks are typically build with interleaved linear layers (such as Conv, TConv, Pooling) together with nonlinear activations (such as ReLU, sigmoid). The Lipschitz constant of most activation function are either constant or easy to control, so we will only focus on linear operationss. Linear operations in genenral can be expressed as in the form of matrix-vector product $$y = g(x) = Wx$$ where $$W$$ denotes a matrix. In this case, the smallest Lipschitz constant of $$g$$ can be expressed as
+Deep neural networks are typically build with interleaved linear layers (such as Conv, TConv, Pooling) together with nonlinear activations (such as ReLU, sigmoid). The Lipschitz constant of most activation function are either constant or easy to control, so we will only focus on linear operations. Linear operations in general can be expressed as in the form of matrix-vector product $$y = g(x) = Wx$$ where $$W$$ denotes a matrix. In this case, the smallest Lipschitz constant of $$g$$ can be expressed as
 
 \begin{equation}
 \label{eq:lipconst}
@@ -61,9 +61,9 @@ M v^{(k-1)}
 \end{align*}
 $$
 
-Claim: $$\|M v^{(k)}\|$$ converges to the maximum eigen value of $$M$$ as $$k$$ approaches infinity. 
+Claim: $$\|M v^{(k)}\|$$ converges to the maximum eigen-value of $$M$$ as $$k$$ approaches infinity. 
 
-To show it, let us write the initial vector $$v^{(0)}$$ as a linear combinations of eigen vectors of $$M$$: $$v^{(0)}=\sum_{i}\alpha_i v_i$$, and expand the iterative formula as
+To show it, let us write the initial vector $$v^{(0)}$$ as a linear combinations of eigen-vectors of $$M$$: $$v^{(0)}=\sum_{i}\alpha_i v_i$$, and expand the iterative formula as
 
 $$
 \begin{align*}
@@ -111,7 +111,7 @@ $$
 \end{align*}
 $$
 
-While it is easy to compute vector norm as done in step 2, it is not immediately clear how to easily compute $$W^TWv^{(k-1)}$$ in step 1, since expressing $$W$$ explicitly for a general linear layer can be invovled. For instance, for a 2D convolution operation, expressing it in the matrix-vector product form requires unpacking the convolution kernel into a doubly Toeplitz matrix. We know that $$Wv^{(k-1)}$$ is just the output of the linear operator $$g$$ when $$v^{(k-1)}$$ is used as input, but seemingly there is no easy way to multiply by $$W^T$$ without knowning $$W$$ explicitly. 
+While it is easy to compute vector norm as done in step 2, it is not immediately clear how to easily compute $$W^TWv^{(k-1)}$$ in step 1, since expressing $$W$$ explicitly for a general linear layer can be involved. For instance, for a 2D convolution operation, expressing it in the matrix-vector product form requires unpacking the convolution kernel into a doubly Toeplitz matrix. We know that $$Wv^{(k-1)}$$ is just the output of the linear operator $$g$$ when $$v^{(k-1)}$$ is used as input, but seemingly there is no easy way to multiply by $$W^T$$ without knowing $$W$$ explicitly. 
 
 Here's the trick: we can express $$W^TWx$$ as the derivative of another another function and compute it with auto-differentiation.
 
@@ -142,7 +142,7 @@ It should not be surprising that the above iteration procedure converges to maxi
 
 ## Enforce Lipschitz constant $$c$$ during training
 
-It is easy to see that the Lipshitz constant of $$a\times g(\cdot)$$ is $$a$$ times the Lipschitz constant of $$g(\cdot)$$, or more precisely, $$\text{Lip}(ag) = a\text{Lip}(g)$$. To enforce the Lipschitz constant of an operator to be some target value $$c$$, we just need to normalize the output the operator by $$c/\text{Lip}(g)$$.
+It is easy to see that the Lipschitz constant of $$a\times g(\cdot)$$ is $$a$$ times the Lipschitz constant of $$g(\cdot)$$, or more precisely, $$\text{Lip}(ag) = a\text{Lip}(g)$$. To enforce the Lipschitz constant of an operator to be some target value $$c$$, we just need to normalize the output the operator by $$c/\text{Lip}(g)$$.
 
 The power iteration procedure itself can be amortized and blended into the optimization step of the network training, in which case the training loop can be expressed as
 
