@@ -2,6 +2,7 @@
 layout: post
 title: Enforcing Lipschitz Constant in Neural Network 
 date: 2021-04-03
+comments: true
 description: How to enforce lipschitz constraint in neural networks?
 ---
 
@@ -21,8 +22,8 @@ A small note before we proceed: Lipschitz continous/constant is defined with res
 
 Deep neural networks are typically build with interleaved linear layers (such as Conv, TConv, Pooling) together with nonlinear activations (such as ReLU, sigmoid). The Lipschitz constant of most activation function are either constant or easy to control, so we will only focus on linear operationss. Linear operations in genenral can be expressed as in the form of matrix-vector product $$y = g(x) = Wx$$ where $$W$$ denotes a matrix. In this case, the smallest Lipschitz constant of $$g$$ can be expressed as
 
-$$
-\begin{align}
+\begin{equation}
+\label{eq:lipconst}
 \min_{x_1, x_2, x_1\not=x_2} \frac{
 ||g(x_1)-g(x_2)||
 }{
@@ -37,8 +38,8 @@ $$
 =
 \min_{||v||=1}
 ||Wv||.
-\end{align}
-$$
+\end{equation}
+
 
 The last term is also known as the *spectral norm* of matrix $$W$$. Let us express $$W$$ as its singular-value-decomposition $$U\Sigma V^T$$, then we can see that the spectral norm of $$W$$ is its maximum singular value, denoted as $$\sigma_1$$. The maximum singular value of $$W$$ is also the maximum eigenvalue of $$M\triangleq W^TW$$ given that eigenvalues of $$W^TW$$ is square of singular values of $$W$$: $$M=V\Sigma U^TU\Sigma V^T=V\Sigma^2V^T=V\Lambda V^T$$.
 
@@ -137,7 +138,7 @@ $$
 Based on last section, $$\sqrt{\|\tilde{v}^{(k)}\|}$$ yields an estimate of the dominant singular value of $$M$$, which is the Lipschitz constant of the linear operator $$g$$.
 In PyTorch, step 1 can be calculated using [torch.atuograd.grad](https://pytorch.org/docs/stable/autograd.html#torch.autograd.grad).
 
-It should not be surprising that the above iteration procedure converges to maximum singular value of $$W$$ -- it is simply the gradient ascent with Equation (1) as the optimization objective.  
+It should not be surprising that the above iteration procedure converges to maximum singular value of $$W$$ -- it is simply the gradient ascent with Equation \eqref{eq:lipconst} as the optimization objective.  
 
 ## Enforce Lipschitz constant $$c$$ during training
 
