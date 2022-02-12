@@ -3,7 +3,7 @@ layout: post
 title: Understanding and Implementing Asymmetric Numeral System (ANS)
 date: 2020-06-26
 comments: true
-description: An introduction of ANS and its implementation
+description: an introduction of ANS and its implementation
 ---
 
 Denote an alphabet with $$N$$ different symbols as $$\mathcal{A}=\{0, 1, \ldots, N-1\}$$. Let us consider a source coding algorithm where a sequence of these symbols are encoded into a sequence of bits, which is represented by an integer $$s$$, and assume that we can decode each symbol sequentially by breaking down $$s$$ into one symbol $$x\in\mathcal{A}$$ and a new integer $$s'\in\mathbb{N}$$ capturing information of the remaining symbols. The encoding and decoding operation can be represented by the following `push` and `pop` operation:

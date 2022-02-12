@@ -3,7 +3,7 @@ layout: post
 title: 'Normalizing Flow: understanding the change of variable equation'
 date: 2019-03-15
 comments: true
-description: a basic introduction to normalization flow
+description: decipher absolute-logarithm-determinant-Jocabian
 ---
 
 Normalizing flow is a technique for constructing complex probability distributions through invertible transformations of a simple distribution. It has been studied and applied in generative models under two contexts: (1) characterizing the approximation posterior distribution of latent variables in the case of variational inference (2) directly approximating the data distribution. When used in the second context, it has demonstrated its capability in generating high-fidelity audio, image, and video data. 

@@ -1,9 +1,9 @@
 ---
 layout: post
-title: An Introduction of Langevin Dynamics for Bayesian Inference
+title: Langevin Dynamics for Bayesian Inference
 date: 2020-09-06
 comments: true
-description: Stochastic differential equation, Fokker Plank equation, and their connections to Bayesian inference
+description: stochastic differential equation, Fokker Plank equation, and their connections to Bayesian inference
 ---
 
 In this post we visit some technical details centered around Langevin Dynamics in the context of stochastic Bayesian learning, assuming minimal background on conventional calculus and Brownian motion. Starting with quadratic variation, we gradually show how Ito's Lemma and Fokker-Planck equation can be derived. Using Fokker-Planck equation, it is revealed that an Langevian dynamic can be used as a MCMC method to generate samples from an un-normalized distribution. Lastly, [stochastic gradient Langevin dynamics](https://www.ics.uci.edu/~welling/publications/papers/stoclangevin_v6.pdf) method is discussed.  

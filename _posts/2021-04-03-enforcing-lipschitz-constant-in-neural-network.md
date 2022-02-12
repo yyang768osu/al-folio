@@ -3,7 +3,7 @@ layout: post
 title: Enforcing Lipschitz Constant in Neural Network 
 date: 2021-04-03
 comments: true
-description: How to enforce lipschitz constraint in neural networks?
+description: how to enforce lipschitz constraint in neural networks?
 ---
 
 A function $$g(x)$$ is Lipschitz continuous if there exists a constant $$L$$ such that $$\|g(x_1) - g(x_2)\| < L \|x_1 - x_2\|$$ for any $$x_1$$ and $$x_2$$ in its domain. $$L$$ is referred to as a Lipschitz constant of $$g$$. The need to enforce a certain Lipschitz constant of neural networks arises in many cases, with some examples listed below. Here we introduce a common technique used in many existing literatures.
