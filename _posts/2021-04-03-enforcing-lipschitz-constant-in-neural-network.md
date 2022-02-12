@@ -20,7 +20,7 @@ A small note before we proceed: Lipschitz continuous/constant is defined with re
 
 ## Lipschitz constant vs spectral norm of matrices
 
-Deep neural networks are typically build with interleaved linear layers (such as Conv, TConv, Pooling) together with nonlinear activations (such as ReLU, sigmoid). The Lipschitz constant of most activation function are either constant or easy to control, so we will only focus on linear operations. Linear operations in general can be expressed as in the form of matrix-vector product $$y = g(x) = Wx$$ where $$W$$ denotes a matrix. In this case, the smallest Lipschitz constant of $$g$$ can be expressed as
+Deep neural networks are typically build with interleaved linear layers (such as Conv, TConv, Pooling) and nonlinear activations (such as ReLU, sigmoid). The Lipschitz constant of most activation functions are either constant or easy to control, so we will only focus on linear operations. Linear operations in general can be expressed as in the form of matrix-vector product $$y = g(x) = Wx$$ where $$W$$ denotes a matrix. In this case, the smallest Lipschitz constant of $$g$$ can be expressed as
 
 \begin{equation}
 \label{eq:lipconst}
@@ -83,7 +83,7 @@ M^k v^{(0)}
 ||M^kv^{(0)}||
 }
 \\
-&M^k v^{(0)} = M^k \sum_{i} \alpha_i v_i = \sum_{i} \alpha_i M^k v_i \sum_{i}\alpha_i \lambda_i^k v_i = \alpha_1\lambda_1^k
+&M^k v^{(0)} = M^k \sum_{i} \alpha_i v_i = \sum_{i} \alpha_i M^k v_i =\sum_{i}\alpha_i \lambda_i^k v_i = \alpha_1\lambda_1^k
 \left(
 v_1 + \sum_{i>1}\underbrace{\frac{\alpha_i}{\alpha_1}\left(\frac{\lambda_i}{\lambda_1}\right)^k}_{\to 0 \text{ as } k\to\infty} v_i
 \right).
