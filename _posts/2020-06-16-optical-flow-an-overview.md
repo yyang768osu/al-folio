@@ -3,7 +3,7 @@ layout: post
 title: Optical Flow -- An Overview
 date: 2020-06-16
 comments: true
-description: a summary of how optimal flow is derived
+description: a summary of how optimal flow can be derived
 ---
 
 * TOC
@@ -218,13 +218,13 @@ The EPE column is taken from Table 2 of [an overview paper](https://arxiv.org/ab
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/FlowNet_encoder.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/FlowNet_encoder.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/FlowNet_decoder.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/FlowNet_decoder.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -241,7 +241,7 @@ Multi-scale training loss is applied. Both models still under-perform energy-bas
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/FlowNet_2.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/FlowNet_2.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -255,7 +255,7 @@ End-to-end based approach starts to outperform energy-based ones.
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/SPyNet.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/SPyNet.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -268,7 +268,7 @@ Achieves comparable performance to FlowNet with 96% less number of parameters.
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/PWCNet.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/PWCNet.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -293,7 +293,7 @@ Remarks:
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/IRR_PWCNet.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/IRR_PWCNet.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -306,7 +306,7 @@ Key ideas
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/PWCNet_Fusion.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/PWCNet_Fusion.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
@@ -349,13 +349,13 @@ and advocates
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/AsymOFMM.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/AsymOFMM.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/optical_flow/MaskFlowNetS.png" class="img-fluid rounded z-depth-1" %}
+        {% include figure.html path="images/optical_flow/MaskFlowNetS.png" class="img-fluid rounded z-depth-1" zoomable=true %}
     </div>
 </div>
 
