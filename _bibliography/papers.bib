@@ -13,10 +13,11 @@
   html={https://openreview.net/forum?id=IDwN6xjHnK8},
   pdf={https://openreview.net/pdf?id=IDwN6xjHnK8},
   selected={true},
+  abbr={zhu2022transformerbased},
   abstract={Neural data compression based on nonlinear transform coding has made great progress over the last few years, mainly due to improvements in prior models, quantization methods and nonlinear transforms. A general trend in many recent works pushing the limit of rate-distortion performance is to use ever more expensive prior models that can lead to prohibitively slow decoding. Instead, we focus on more expressive transforms that result in a better rate-distortion-computation trade-off. Specifically, we show that nonlinear transforms built on Swin-transformers can achieve better compression efficiency than transforms built on convolutional neural networks (ConvNets), while requiring fewer parameters and shorter decoding time. Paired with a compute-efficient Channel-wise Auto-Regressive Model prior, our SwinT-ChARM model outperforms VTM-12.1 by 3.68 percent in BD-rate on Kodak with comparable decoding speed. In P-frame video compression setting, we are able to outperform the popular ConvNet-based scale-space-flow model by 12.35 percent in BD-rate on UVG. We provide model scaling studies to verify the computational efficiency of the proposed solutions and conduct several analyses to reveal the source of coding gain of transformers over ConvNets, including better spatial decorrelation, flexible effective receptive field, and more localized response of latent pixels during progressive decoding.}
 }
 
-@inproceedings{9506026,
+@inproceedings{plonq,
   author={Lu, Yadong* and Zhu, Yinhao* and Yang, Yang* and Said, Amir and Cohen, Taco S},
   booktitle={IEEE International Conference on Image Processing (ICIP)}, 
   title={Progressive Neural Image Compression With Nested Quantization And Latent Ordering}, 
@@ -24,6 +25,7 @@
   pages={539-543},
   doi={10.1109/ICIP42928.2021.9506026},
   selected={true},
+  abbr={plonq},
   html={https://ieeexplore.ieee.org/document/9506026},
   abstract={We present PLONQ, a progressive neural image compression scheme which pushes the boundary of variable bitrate compression by allowing quality scalable coding with a single bitstream. In contrast to existing learned variable bitrate solutions which produce separate bitstreams for each quality, it enables easier rate-control and requires less storage. Leveraging the latent scaling based variable bitrate solution, we introduce nested quantization, a method that defines multiple quantization levels with nested quantization grids, and progressively refines all latents from the coarsest to the finest quantization level. To achieve finer progressiveness in between any two quantization levels, latent elements are incrementally refined with an importance ordering defined in the rate-distortion sense. To the best of our knowledge, PLONQ is the first learning-based progressive image coding scheme and it outperforms SPIHT, a well-known wavelet-based progressive image codec.}
 }
@@ -48,6 +50,7 @@
   pages={3347-3351},
   doi={10.1109/ICASSP40776.2020.9054074},
   selected = {true},
+  abbr={frae},
   html={https://ieeexplore.ieee.org/document/9054074/citations#citations},
   abstract={In this work, we propose a new recurrent autoencoder architecture, termed Feedback Recurrent AutoEncoder (FRAE), for online compression of sequential data with temporal dependency. The recurrent structure of FRAE is designed to efficiently extract the redundancy along the time dimension and allows a compact discrete representation of the data to be learned. We demonstrate its effectiveness in speech spectrogram compression. Specifically, we show that the FRAE, paired with a powerful neural vocoder, can produce high-quality speech waveforms at a low, fixed bitrate. We further show that by adding a learned prior for the latent space and using an entropy coder, we can achieve an even lower variable bitrate.},
 }
@@ -76,7 +79,7 @@
   abstract={This paper proposes a novel pipeline for automatic grammar augmentation that provides a significant improvement in the voice command recognition accuracy for systems with small footprint acoustic model (AM). The improvement is achieved by augmenting the user-defined voice command set, also called grammar set, with alternate grammar expressions. For a given grammar set, a set of potential grammar expressions (candidate set) for augmentation is constructed from an AM-specific statistical pronunciation dictionary that captures the consistent patterns and errors in the decoding of AM induced by variations in pronunciation, pitch, tempo, accent, ambiguous spellings, and noise conditions. Using this candidate set, greedy optimization based and cross-entropy-method (CEM) based algorithms are considered to search for an augmented grammar set with improved recognition accuracy utilizing a command-specific dataset. Our experiments show that the proposed pipeline along with algorithms considered in this paper significantly reduce the mis-detection and mis-classification rate without increasing the false-alarm rate. Experiments also demonstrate the consistent superior performance of CEM method over greedy-based algorithms.},
 }
 
-@inproceedings{Hilmi,
+@inproceedings{prelu_nogdn,
   title={Transform Network Architectures for Deep Learning Based End-to-End Image/Video Coding in Subsampled Color Spaces},
   volume={2},
   ISSN={2644-1322},
@@ -88,6 +91,7 @@
   pages={441–452},
   selected = {true},
   pdf = {https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=9464274},
+  abbr = {prelu_nogdn},
   abstract = {Most of the existing deep learning based end-to-end image/video coding (DLEC) architectures are designed for non-subsampled RGB color format. However, in order to achieve a superior coding performance, many state-of-the-art block-based compression standards such as High Efficiency Video Coding (HEVC/H.265) and Versatile Video Coding (VVC/H.266) are designed primarily for YUV 4:2:0 format, where U and V components are subsampled by considering the human visual system. This paper investigates various DLEC designs to support YUV 4:2:0 format by comparing their performance against the main profiles of HEVC and VVC standards under a common evaluation framework. Moreover, a new transform network architecture is proposed to improve the efficiency of coding YUV 4:2:0 data. The experimental results on YUV 4:2:0 datasets show that the proposed architecture significantly outperforms naive extensions of existing architectures designed for RGB format and achieves about 10% average BD-rate improvement over the intra-frame coding in HEVC.}
 }
 
@@ -96,7 +100,6 @@
   booktitle={ICML 2020 Workshop on Invertible Neural Networks, Normalizing Flows, andExplicit Likelihood Models},
   author={Ruihan Yang and Yibo Yang and Joseph Marino and Yang Yang and Stephan Mandt},
   year={2020},
-  selected = {true},
   pdf = {https://joelouismarino.github.io/files/papers/2020/seq_flows_compression/seq_flows_compression.pdf},
 }
 
@@ -106,6 +109,7 @@
   author={Jamie Menjay Lin and Parham Noorzad and Yang Yang and Nojun Kwak and Fatih Porikli},
   year={2021},
   selected = {true},
+  abstract={This paper introduces Phase Selective Convolution (PSC), an enhanced convolution for more deliberate utilization of activations in convolutional networks. Unlike conventional use of convolutions with activation functions, PSC preserves the full space of activations while supporting desirable model nonlinearity. Similar to several other network operations, e.g., the ReLU operation, at the time of their introduction, PSC may not execute as efficiently on platforms without hardware specialization support. As a first step in addressing the need for optimization, we propose a hardware acceleration scheme to enable the intended efficiency for PSC execution. Moreover, we propose a PSC deployment strategy, with which PSC is applied only to selected layers of the networks, to avoid excessive increase in the total model size. To evaluate the results, we apply PSC as a drop-in replacement for selected convolution layers in several networks without affecting their macro network architectures. In particular, PSC-enhanced ResNets achieve higher accuracies by 1.0-2.0% and 0.7-1.0% on CIFAR-100 and ImageNet, respectively, in Pareto efficiency. PSC-enhanced MobileNets (V2 and V3 Large) and MobileNetV3 (Small) achieve 0.9-1.0% and 1.8% accuracy gains, respectively, on ImageNet at little (0.2-0.7%) total model size increase.},
   html = {https://openaccess.thecvf.com/content/CVPR2021W/EVW/html/Lin_Phase_Selective_Convolution_CVPRW_2021_paper.html},
   pdf = {https://openaccess.thecvf.com/content/CVPR2021W/EVW/papers/Lin_Phase_Selective_Convolution_CVPRW_2021_paper.pdf},
 }
