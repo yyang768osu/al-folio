@@ -3,7 +3,7 @@ layout: post
 title: "Markov Chain Monte Carlo: Gibbs, Metropolis-Hasting, and Hamiltonian"
 date: 2019-07-06
 comments: true
-description: Gibbs, Metropolis-Hasting, and Hamiltonian
+description: A primer to Gibbs sampling, Metropolis-Hasting, and Hamiltonian MC
 ---
 
 A fundamental problem in statistical learning is to compute the expectation with respect to some target probability distribution $$\pi$$
