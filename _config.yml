@@ -202,8 +202,8 @@ jekyll-archives:
 
 scholar:
 
-  last_name: Einstein
-  first_name: [Albert, A.]
+  last_name: Yang
+  first_name: [Yang, Yang*]
 
   style: apa
   locale: en
