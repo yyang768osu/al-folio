@@ -123,7 +123,7 @@ This decomposition leads to the interpretation of probabilistic auto-encoder, wh
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/variational_inference/vae.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+        {% include figure.html path="assets/img/blog_img/variational_inference/vae.png" class="img-fluid rounded z-depth-1" zoomable=false %}
     </div>
 </div>
 

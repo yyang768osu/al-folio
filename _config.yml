@@ -311,9 +311,10 @@ medium_zoom:
   integrity: "sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM="
 
 # TODO: 
-# Proof-read TDLR for each selected paper
-# Figure out why zoomed in image has even lower resolution than the smaller icon image
 # Fix link to self
-# Replace alpha channel with white for png illustrations for better viewing at dark mode
 # Figure out how to make dark mode default
 # Figure out how to add horizontal bar to show vertical percentage
+# Add page about patent
+
+# Done:
+# ls | grep png | xargs -I {} convert {} -background white -alpha remove -alpha off {}

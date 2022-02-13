@@ -13,7 +13,9 @@
         {%- endif -%}
 
         {%- if entry.image -%}
-          <img class="img-fluid z-depth-1" data-zoomable="" src="{{ entry.image | prepend: '/assets/pubimg/' | relative_url }}">
+
+        {% include figure.html path=entry.image class="img-fluid rounded z-depth-1" zoomable=true %}
+          <!-- <img class="img-fluid z-depth-1" data-zoomable src="{{ entry.image | prepend: '/assets/pubimg/' | relative_url }}"> -->
         {%- endif -%}
 
         </div>

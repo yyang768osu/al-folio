@@ -13,7 +13,7 @@ Graphic models describe the factorization of probability distributions. The deta
     <div class="col-sm mt-3 mt-md-0">
     </div>
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/variational_inference/dgm.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+        {% include figure.html path="assets/img/blog_img/variational_inference/dgm.png" class="img-fluid rounded z-depth-1" zoomable=false %}
     </div>
     <div class="col-sm mt-3 mt-md-0">
     </div>
