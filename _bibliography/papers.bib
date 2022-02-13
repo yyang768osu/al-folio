@@ -83,18 +83,6 @@
   html = {https://openaccess.thecvf.com/content/ACCV2020/html/Golinski_Feedback_Recurrent_Autoencoder_for_Video_Compression_ACCV_2020_paper.html}
 }
 
-@inproceedings{psc,
-  title={Phase Selective Convolution},
-  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops on Embedded Vision},
-  author={Jamie Menjay Lin and Parham Noorzad and Yang Yang and Nojun Kwak and Fatih Porikli},
-  year={2021},
-  selected = {true},
-  image = {PSC.png},
-  abbr={CVPR-W},
-  abstract={This paper introduces Phase Selective Convolution (PSC), an enhanced convolution for more deliberate utilization of activations in convolutional networks. Unlike conventional use of convolutions with activation functions, PSC preserves the full space of activations while supporting desirable model nonlinearity. Similar to several other network operations, e.g., the ReLU operation, at the time of their introduction, PSC may not execute as efficiently on platforms without hardware specialization support. As a first step in addressing the need for optimization, we propose a hardware acceleration scheme to enable the intended efficiency for PSC execution. Moreover, we propose a PSC deployment strategy, with which PSC is applied only to selected layers of the networks, to avoid excessive increase in the total model size. To evaluate the results, we apply PSC as a drop-in replacement for selected convolution layers in several networks without affecting their macro network architectures. In particular, PSC-enhanced ResNets achieve higher accuracies by 1.0-2.0% and 0.7-1.0% on CIFAR-100 and ImageNet, respectively, in Pareto efficiency. PSC-enhanced MobileNets (V2 and V3 Large) and MobileNetV3 (Small) achieve 0.9-1.0% and 1.8% accuracy gains, respectively, on ImageNet at little (0.2-0.7%) total model size increase.},
-  html = {https://openaccess.thecvf.com/content/CVPR2021W/EVW/html/Lin_Phase_Selective_Convolution_CVPRW_2021_paper.html},
-  tldr = {A simple and effective extension of Conv+ReLU that can achieve better pareto efficiency in image classification comapred with ResNet and MobileNets},
-}
 
 @inproceedings{Ding_2020_CVPR,
   author = {Ding, Zheng* and Xu, Yifan* and Xu, Weijian and Parmar, Gaurav and Yang, Yang and Welling, Max and Tu, Zhuowen},
@@ -124,6 +112,20 @@
   tldr={Improve voice command recognition of a light-weight acoustic model by augmenting the target command to captures variations of inputs.},
   html={https://ieeexplore.ieee.org/document/8682157},
   abstract={This paper proposes a novel pipeline for automatic grammar augmentation that provides a significant improvement in the voice command recognition accuracy for systems with small footprint acoustic model (AM). The improvement is achieved by augmenting the user-defined voice command set, also called grammar set, with alternate grammar expressions. For a given grammar set, a set of potential grammar expressions (candidate set) for augmentation is constructed from an AM-specific statistical pronunciation dictionary that captures the consistent patterns and errors in the decoding of AM induced by variations in pronunciation, pitch, tempo, accent, ambiguous spellings, and noise conditions. Using this candidate set, greedy optimization based and cross-entropy-method (CEM) based algorithms are considered to search for an augmented grammar set with improved recognition accuracy utilizing a command-specific dataset. Our experiments show that the proposed pipeline along with algorithms considered in this paper significantly reduce the mis-detection and mis-classification rate without increasing the false-alarm rate. Experiments also demonstrate the consistent superior performance of CEM method over greedy-based algorithms.},
+}
+
+
+@inproceedings{psc,
+  title={Phase Selective Convolution},
+  booktitle={IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops on Embedded Vision},
+  author={Jamie Menjay Lin and Parham Noorzad and Yang Yang and Nojun Kwak and Fatih Porikli},
+  year={2021},
+  selected = {true},
+  image = {PSC.png},
+  abbr={CVPR-W},
+  abstract={This paper introduces Phase Selective Convolution (PSC), an enhanced convolution for more deliberate utilization of activations in convolutional networks. Unlike conventional use of convolutions with activation functions, PSC preserves the full space of activations while supporting desirable model nonlinearity. Similar to several other network operations, e.g., the ReLU operation, at the time of their introduction, PSC may not execute as efficiently on platforms without hardware specialization support. As a first step in addressing the need for optimization, we propose a hardware acceleration scheme to enable the intended efficiency for PSC execution. Moreover, we propose a PSC deployment strategy, with which PSC is applied only to selected layers of the networks, to avoid excessive increase in the total model size. To evaluate the results, we apply PSC as a drop-in replacement for selected convolution layers in several networks without affecting their macro network architectures. In particular, PSC-enhanced ResNets achieve higher accuracies by 1.0-2.0% and 0.7-1.0% on CIFAR-100 and ImageNet, respectively, in Pareto efficiency. PSC-enhanced MobileNets (V2 and V3 Large) and MobileNetV3 (Small) achieve 0.9-1.0% and 1.8% accuracy gains, respectively, on ImageNet at little (0.2-0.7%) total model size increase.},
+  html = {https://openaccess.thecvf.com/content/CVPR2021W/EVW/html/Lin_Phase_Selective_Convolution_CVPRW_2021_paper.html},
+  tldr = {A simple and effective extension of Conv+ReLU that can achieve better pareto efficiency in image classification comapred with ResNet and MobileNets},
 }
 
 
