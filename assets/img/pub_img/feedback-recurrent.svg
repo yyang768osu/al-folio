@@ -16,9 +16,9 @@
    version="1.1"
    inkscape:version="1.0.1 (c497b03c, 2020-09-10)"
    sodipodi:docname="feedback-recurrent.svg"
-   inkscape:export-filename="/Users/yangyang/Dropbox/Blog/al-folio/assets/pubimg/feedback-recurrent.png"
-   inkscape:export-xdpi="499.90176"
-   inkscape:export-ydpi="499.90176">
+   inkscape:export-filename="/Users/yangyang/Desktop/bitmap.png"
+   inkscape:export-xdpi="499.90201"
+   inkscape:export-ydpi="499.90201">
   <sodipodi:namedview
      id="base"
      pagecolor="#ffffff"
@@ -2394,7 +2394,7 @@
        ns0:jacobian_sqrt="1.0"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:normal;word-spacing:normal;text-anchor:start;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10.433;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1">
 <polygon
-   points="151.83,664.04 154.54,662.82 154.66,663.04 151.84,664.63 149.02,663.04 149.13,662.82 "
+   points="154.66,663.04 151.84,664.63 149.02,663.04 149.13,662.82 151.83,664.04 154.54,662.82 "
    style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-opacity:1"
    id="polygon44623" />
 <path
@@ -2631,7 +2631,7 @@
        ns0:jacobian_sqrt="1.0"
        style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;letter-spacing:normal;word-spacing:normal;text-anchor:start;fill:none;fill-opacity:1;fill-rule:evenodd;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:10.433;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1">
 <polygon
-   points="149.13,662.82 151.83,664.04 154.54,662.82 154.66,663.04 151.84,664.63 149.02,663.04 "
+   points="154.54,662.82 154.66,663.04 151.84,664.63 149.02,663.04 149.13,662.82 151.83,664.04 "
    style="fill:#000000;fill-opacity:1;stroke:#000000;stroke-width:0;stroke-opacity:1"
    id="polygon44693" />
 <path
