@@ -10,7 +10,7 @@ Conventional HMM-based ASR system assumes a generative model comprised of a lang
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/asr/HMM.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+        {% include figure.html path="assets/img/blog_img/asr/HMM.png" class="img-fluid rounded z-depth-1" zoomable=false %}
     </div>
 </div>
 
@@ -26,7 +26,7 @@ $$
 \end{align*}
 $$
 
-For ease of notation, for the rest of this section, let's ignore the conditioning on $${\bf y}^{(n)}$$ (or $${\bf p}^{(n)}$$). The difficulty in evaluating the above log-likelihood lies in the need to marginalize over all potential values of $${\bf z}^{(n)}$$. This formulation falls right into the discussion of the previous two posts:  [variational lower bound](xx)) and [expectation maximization](xx), which provide an iterative algorithm to approach the solution
+For ease of notation, for the rest of this section, let's ignore the conditioning on $${\bf y}^{(n)}$$ (or $${\bf p}^{(n)}$$). The difficulty in evaluating the above log-likelihood lies in the need to marginalize over all potential values of $${\bf z}^{(n)}$$. This formulation falls right into the discussion of the previous two posts:  [variational lower bound]({{ site.baseurl }}{% link _posts/2018-07-08-variational-inference-I-variational-lower-bound.md %}) and [expectation maximization]({{ site.baseurl }}{% link _posts/2018-07-15-variational-inference-II-expectation-maximization.md %}), which provide an iterative algorithm to approach the solution
 
 $$
 \begin{align}
@@ -39,11 +39,11 @@ Most of the computation complexity in the above equation lies in finding the pos
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="images/asr/HMM2.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+        {% include figure.html path="assets/img/blog_img/asr/HMM2.png" class="img-fluid rounded z-depth-1" zoomable=false %}
     </div>
 </div>
 
-The inference problem (finding the posterior of the latent given the observed) in a hidden Markov chain can be solved by a forward-backward algorithm. The algorithm manifests itself as BCJR algorithm in convolutional code bit-level MAP decoding and [Kalman filtering](xx) in linear dynamic system.
+The inference problem (finding the posterior of the latent given the observed) in a hidden Markov chain can be solved by a forward-backward algorithm. The algorithm manifests itself as BCJR algorithm in convolutional code bit-level MAP decoding and [Kalman filtering]({{ site.baseurl }}{% link _posts/2018-08-20-kalman-filter-and-particle-filter.md %}) in linear dynamic system.
 
 $$
 \begin{align}

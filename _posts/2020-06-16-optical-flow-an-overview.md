@@ -3,7 +3,7 @@ layout: post
 title: Optical Flow -- An Overview
 date: 2020-06-16
 comments: true
-description: a summary of how optimal flow can be derived
+description: summary of how optimal flow can be derived
 ---
 
 * TOC
