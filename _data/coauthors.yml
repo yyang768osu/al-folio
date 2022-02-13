@@ -75,3 +75,35 @@
 "Lin":
   - firstname: ["Jamie Menjay"]
     url: https://www.linkedin.com/in/jmjlin/
+
+"Shroff":
+  - firstname: ["Ness", "Ness B", "Ness B."]
+    url: http://newslab.ece.ohio-state.edu/home/index.html
+
+"Tan":
+  - firstname: ["Jian"]
+    url: https://scholar.google.com/citations?hl=en&user=m36rOvoAAAAJ&view_op=list_works&sortby=pubdate
+
+"Chen":
+  - firstname: ["Bo"]
+    url: https://scholar.google.com/citations?user=5KCBuEAAAAAJ&hl=en
+  
+"Liu":
+  - firstname: ["Jiashang"]
+    url: https://scholar.google.com/citations?user=5xtKlEkAAAAJ&hl=en
+  
+"Wu":
+  - firstname: ["Fei"]
+    url: https://scholar.google.com/citations?user=KqQOfYEAAAAJ&hl=en
+
+"Sun":
+  - firstname: ["Yin"]
+    url: http://webhome.auburn.edu/~yzs0078/
+
+"Qian":
+  - firstname: ["Zhenzhi"]
+    url: https://www.linkedin.com/in/zhenzhi-qian-5a350752/
+
+"Egilmez":
+  - firstname: ["Hilmi"]
+    url: https://www.linkedin.com/in/hilmi-enes-egilmez-2ab4b11a
