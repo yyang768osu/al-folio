@@ -234,7 +234,7 @@ $$
 \end{align*}
 $$
 
-with the intuition that each $$\theta_t$$ will contribute an effective sample size proportional to $$\epsilon_t$$.
+with the intuition that each $$\theta_t$$ contributes an effective sample size proportional to $$\epsilon_t$$.
 
 
 
