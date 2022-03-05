@@ -307,7 +307,7 @@ There are two different model quantization methodologies: **Post Training Quanti
 
 In post training quantization (PTQ), a floating-point trained model is converted to a fixed point one *without any end-to-end training pipeline*. The task here is to find ranges (quantization parameters) for each weight and activation either without any data or with a small representative unlabelled dataset, which is often available. Since no end-to-end training is involved, it decouples model training from model quantization, which allows fast prototyping of the model. 
 
-Quantization aware quantization (QAT), by contrast, integrate quantization operation as part of the model, and train the quantization parameters together with its underlying floating point weights, where the gradient of the quantization operation is described in the previous section, is used for. Setting up training pipeline with quantization involved can be a tedious process and requires more effort than PTQ, but it often results in close-to-floating-point performance, sometimes even with very low bit-width.
+Quantization aware quantization (QAT), by contrast, integrates quantization operation as part of the model, and train the quantization parameters together with its underlying floating point weights, where the gradient of the quantization operation is described in the previous section, is used for. Here we need access to full training dataset. Setting up the training pipeline that involves quantization simulation can be a tedious process and requires more effort than PTQ, but it often results in close-to-floating-point performance, sometimes even with very low bit-width.
 
 In the next section, we first go over some baseline quantization range estimation methods, and then describe three techniques that boosts PTQ performance. Keep in mind though that some of the PTQ techniques can lead to better initialization for QAT and thus can be helpful in the QAT context as well.
 
@@ -317,15 +317,37 @@ In the next section, we first go over some baseline quantization range estimatio
 ### Range Estimation Methods
 ---
 
-* MSE 
-  * Solve $$\underset{z,s}{\arg\min} \|x-\hat{x}\|_F^2$$ 
-  * [[Banner et al. 2019]](#banner_et_al_2019)
-* Cross-Entropy
-  * Solve $$\underset{z,s}{\arg\min}\text{ }\texttt{CrossEntropy}(\texttt{softmax}(x),\texttt{softmax}(\hat{x}))$$ 
-* Min-Max
-  * Find $$z$$ and $$s$$ such that $$q_\text{min} \approx \min x$$ and $$q_\text{max} \approx \max x$$
-* BatchNorm (For activation quantization only)
-  * Use batch norm statistics to approximate min and max as $$\min x\approx \beta - \alpha\gamma$$ and $$\max x\approx \beta + \alpha\gamma$$. ($$\alpha=6$$ is suggested)
+This part covers how the range ($$q_\text{min}, q_\text{max}$$) of weight and/or activation can be estimated. As noted previously, $$(q_\text{min}, q_\text{max})$$, or equivalently $$(s, z)$$, uniquely determine the quantization scheme for a given fixed-point format $$(b, n, p)$$. 
+
+
+**Min-Max**
+
+To avoid any clipping error, we can set $$q_\text{min}$$ and $$q_\text{max}$$ to the min and max of the tensor to be quantized. For weight, this can readily obtained; for activation we can use the statistics obtained using a small set of input data.
+
+$$
+\begin{align*}
+q_\text{min} =\min x\\
+q_\text{max} =\max x
+\end{align*}
+$$
+
+The downside of this approach is that a large rounding error may be incurred if there are strong outliers of min/max values. 
+
+**MSE**
+
+To find the right balance between range and precision, we can try to find 
+
+Solve $$\underset{z,s}{\arg\min} \|x-\hat{x}\|_F^2$$ 
+* [[Banner et al. 2019]](#banner_et_al_2019)
+
+
+**Cross-Entropy**
+* Solve $$\underset{z,s}{\arg\min}\text{ }\texttt{CrossEntropy}(\texttt{softmax}(x),\texttt{softmax}(\hat{x}))$$ 
+
+**BatchNorm (For activation quantization only)**
+* Use batch norm statistics to approximate min and max as $$\min x\approx \beta - \alpha\gamma$$ and $$\max x\approx \beta + \alpha\gamma$$. ($$\alpha=6$$ is suggested)
+
+One minor detail is that the value of $$q_\text{min}$$ and $$q_\text{max}$$ needs to tweaked to ensure that the corresponding offset $$z$$ is an integer value on the grid.
 
 ---
 ### Cross Layer Equalization
