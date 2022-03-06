@@ -108,7 +108,7 @@ collections:
     output: false
     permalink: /projects/:path/
 
-news_limit: 5
+news_limit: 6
 
 # -----------------------------------------------------------------------------
 # Jekyll settings

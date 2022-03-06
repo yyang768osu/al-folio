@@ -1,13 +1,13 @@
 ---
 layout: post
 title: A Primer on Neural Network Quantization 
-date: 2022-03-01
+date: 2022-03-05
 comments: true
 description: how to properly quantize neural networks for efficient hardware inference?
 ---
 
 
-> **Disclaimer**: this post is a reading note of the paper [A White Paper on Neural Network Quantization](https://arxiv.org/abs/2106.08295) [[Nagel et al. 2021]](#Nagel_et_al_2021) with additional illustrations and explanations that help my understanding (hopefully can help yours too). The same materials can be found in the paper and the references therein. You are highly encouraged to read the paper first and the references if you want to go into depth for certain topics.
+> This post is a reading note of the paper [A White Paper on Neural Network Quantization](https://arxiv.org/abs/2106.08295) [[Nagel et al. 2021]](#Nagel_et_al_2021) with additional illustrations and explanations that help my understanding (hopefully can help yours too). The same materials can be found in the paper and the references therein. You are highly encouraged to read the paper first and the references if you want to go into depth for certain topics.
 
 Neural network model quantization enables fast network inference using efficient fixed point arithmetics in typical AI hardware accelerators. Compared with floating point inference, it allows less storage space, smaller memory footprint, lower power consumption, and faster inference speed, all of which are essential for practical edge deployment of deep learning solutions. It is thus a critical step in the model efficient pipeline. In this post, based off [[Nagel et al. 2021]](#Nagel_et_al_2021), we provide a detailed guide to network quantization.  
 
@@ -317,12 +317,12 @@ In the next section, we first go over some baseline quantization range estimatio
 ### Range Estimation Methods
 ---
 
-This part covers how the range ($$q_\text{min}, q_\text{max}$$) of weight and/or activation can be estimated. As noted previously, $$(q_\text{min}, q_\text{max})$$, or equivalently $$(s, z)$$, uniquely determine the quantization scheme for a given fixed-point format $$(b, n, p)$$. 
+This part covers how the range ($$q_\text{min}, q_\text{max}$$) of weight and/or activation can be estimated. As noted previously, $$(q_\text{min}, q_\text{max})$$, or equivalently $$(s, z)$$, uniquely determine the quantization scheme for a given fixed-point format $$(b, n, p)$$. All these approaches need some statistical information of the data to be quantized. For weight, this is readily available, and for activation, it can be estimated with a small set of representative input data.
 
 
-**Min-Max**
+<ins>**Min-Max**</ins>
 
-To avoid any clipping error, we can set $$q_\text{min}$$ and $$q_\text{max}$$ to the min and max of the tensor to be quantized. For weight, this can readily obtained; for activation we can use the statistics obtained using a small set of input data.
+To avoid any clipping error, we can set $$q_\text{min}$$ and $$q_\text{max}$$ to the min and max of the tensor to be quantized. 
 
 $$
 \begin{align*}
@@ -333,27 +333,44 @@ $$
 
 The downside of this approach is that a large rounding error may be incurred if there are strong outliers of min/max values. 
 
-**MSE**
+<ins>**MSE**</ins>
 
-To find the right balance between range and precision, we can try to find 
+To strike the right balance between range and precision, we can instead minimize the mean-square-error (MSE) of the quantized value with the floating point one, 
 
-Solve $$\underset{z,s}{\arg\min} \|x-\hat{x}\|_F^2$$ 
-* [[Banner et al. 2019]](#banner_et_al_2019)
+$$\underset{q_\text{min},q_\text{max}}{\arg\min} \|x-\hat{x}\|_F^2.$$ 
+
+[[Banner et al. 2019]](#banner_et_al_2019) introduced an analytical approximation of the above objective when $$x$$ follows either Laplace or Gaussian distribution (or one-sided Gaussian/Laplace if $$x$$ is output of ReLU activation). Alternative, a simple grid search could also work. 
+
+<ins>**Cross-Entropy**</ins>
+
+For model with last year being a softmax, we can quantize the last layer activation (which are logits) to minimize the error in probability space, instead of MSE.
+
+$$\underset{q_\text{min},q_\text{max}}{\arg\min}\text{ }\texttt{CrossEntropy}(\texttt{softmax}(x),\texttt{softmax}(\hat{x}))$$ 
 
 
-**Cross-Entropy**
-* Solve $$\underset{z,s}{\arg\min}\text{ }\texttt{CrossEntropy}(\texttt{softmax}(x),\texttt{softmax}(\hat{x}))$$ 
+<ins>**BatchNorm**</ins>
 
-**BatchNorm (For activation quantization only)**
-* Use batch norm statistics to approximate min and max as $$\min x\approx \beta - \alpha\gamma$$ and $$\max x\approx \beta + \alpha\gamma$$. ($$\alpha=6$$ is suggested)
+In layers with batch normalization layer, we can use its learn parameters (mean $$\beta$$ and std $$\beta$$) to approximate min and max as $$q_\text{min}\approx \beta - \alpha\gamma$$ and $$q_\text{max} \approx \beta + \alpha\gamma$$ where $$\alpha=6$$ is recommended. 
 
-One minor detail is that the value of $$q_\text{min}$$ and $$q_\text{max}$$ needs to tweaked to ensure that the corresponding offset $$z$$ is an integer value on the grid.
+One minor detail for all the above approach is that the value of $$q_\text{min}$$ and $$q_\text{max}$$ needs to tweaked to ensure that the corresponding offset $$z$$ is an integer value on the grid.
+
+> Empirically, **MSE**-based method is the most robust across different models and bit-width settings is the recommended method for range estimation. For logit activation, **Cross-Entropy** based method can be beneficial especially in low bit-width regime (4-bit or below).
 
 ---
 ### Cross Layer Equalization
 ---
 
-$$f(sx) = sf(x)$$
+We have mentioned that per-tensor quantization of weight can be problematic when weights for different output channels have significantly different ranges. The issue can be side-stepped using per-channel quantization of weights, but not all hardware supports it. 
+
+Turns out there is a quite smart way to re-scale the weights across different layers without changing the floating model's output but makes it much more friendly to per-tensor quantization. The technique is called Cross layer equalization, proposed by [[Nagel et al. 2019]](#Nagel_et_al_2019) and [[Meller et al. 2019]](#meller_et_al_2019). Let's go over it.
+
+A linear map $$f$$ satisfies two properties: (1) additivity: $$f(a+b)=f(a)+f(b)$$, and (2) scale equivariant $$sf(a) = f(sa)$$ (scaled input leads scaled output). Some of the most commonly used nonlinear activation functions such as ReLU or leaky ReLU only give up the first property but still have the second property hold for any positive scaling factor $$s$$.
+
+The scale equivariant property allows us to redistribute the scaling of weights of two adjacent layers even with the activation function in the middle. In the naive scalar example, this can be seen as 
+
+$$w^{(2)}f\left(w^{(1)}x\right) = sw^{(2)}f\left(\frac{w^{(1)}}{s} x\right).$$
+
+For the general case of two consecutive Conv or FC layer (weights denoted as $$W^{(1)}, W^{(2)}$$) with a scale equivariant nonlinearity in the middle (denoted as $$f$$), we can apply a scaling of $$s_i$$ on the $$i^\text{th}$$ input channel of $$W^{(2)}$$ ($$W^{(2)}_{\cdot i}$$) and a scaling of $$1/s_i$$ on the $$i^\text{th}$$ output channel of $$W^{(1)}$$ ($$W^{(1)}_{i \cdot}$$) without changing the output.
 
 $$
 \begin{align*}
@@ -377,6 +394,15 @@ $$
 \end{align*}
 $$
 
+This is illustrated in the figure below, where we take as an example two 1x1 convolution with a ReLU in between.
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        {% include figure.html path="assets/img/blog_img/quantization/cross_layer_equalization.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+    </div>
+</div>
+
+Intuitively, we want to redistribute the magnitude of weights between the weight tensors in such a way that the maximum magnitude can be equalized. In other words, whenever the range of $$W^{(1)}_{i\cdot}$$ is larger than that of $$W^{(2)}_{\cdot i}$$, there is an incentive to scale down $$W^{(1)}_{i\cdot}$$ to the point that they match in their range. With this intuition in mind, we can derive the scaling factor to be applied for each channel $$i$$ (output channel of $$W^{(1)}$$ and input channel of $$W^{(2)}$$):
+
 $$
 \begin{align*}
                 &\max\left| W_{\cdot i}^{(2)} s_i \right| = \max\left|\frac{W_{i\cdot}^{(1)}}{s_i}\right| \\
@@ -389,19 +415,28 @@ $$
 \end{align*}
 $$
 
-
+Cross layer equalization with the scaling derived as above is a super effective way to boost performance of PTQ when per-tensor quantization of weight is applied. It is especially critical for models that use depth-wise separate convolution, which empirically leads to large variation in magnitude of weights from different channels. Below is Table 3 from [[Nagel et al. 2021]](#Nagel_et_al_2021), where it shows that applying CLE on the floating point model before PTQ can fix the PTQ performance from a completely breakdown to less than 2 percent loss compared with floating point. 
 
 <div class="row mt-3">
-    <div class="col-sm mt-3 mt-md-0">
-        {% include figure.html path="assets/img/blog_img/quantization/cross_layer_equalization.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+    <div class="col-sm-3 mt-3 mt-md-0">
+    </div>
+    <div class="col-sm-6 mt-3 mt-md-0">
+        {% include figure.html path="assets/img/blog_img/quantization/cle_results.png" class="img-fluid rounded z-depth-1" zoomable=false %}
+    </div>
+    <div class="col-sm-3 mt-3 mt-md-0">
     </div>
 </div>
 <div class="caption">
-    Cross layer equalization
+    Figure 3 from <a href="#Nagel_et_al_2021">[Nagel et al. 2021]</a>: PTQ ImageNet validation on MobileNetV2.  
 </div>
 
-[[Nagel et al. 2019]](#Nagel_et_al_2019)
-[[Meller et al. 2019]](#meller_et_al_2019)
+> To summarize, CLE is a technique that adjust weights of a floating point model so that it becomes more friendly with per-tensor quantization of weights. Some remarks below
+> * In the context of PTQ, CLE is a must have whenever per-tensor quantization is applied.
+> * In the context of QAT, CLE still is a necessary preprocessing step of the model to get a good initialization of the per-tensor quantization parameters. 
+> * A limitation for CLE is that it cannot handle pair of layers where there is skip connection to or from the activation in the middle.
+> * [[Meller et al. 2019]](#meller_et_al_2019) proposes to apply equalization that also takes the activation tensor in the middle into account
+> * To apply CLE to a model, the process is iterated for every pairs of layers (that does not have skip connection to or from the middle layer) sequentially until convergence. 
+
 
 ---
 ### Bias Correction 
@@ -409,12 +444,10 @@ $$
 
 Quantization of weights can lead to a shift in mean value of the output distribution. Specifically, for a linear layer with weight $$W$$ and input of $$x$$, the gap between the mean output of quantized weight $$\hat{W}$$ and its floating point counterpart $$W$$  can be expressed as $$\mathbb{E}[\hat{W}x] - \mathbb{E}[Wx] = (W-\hat{W})\mathbb{E}[x]$$. Given that $$x$$ is the activation of the previous layer, $$\mathbb{E}[x]$$ is often non-zero (e.g., if $$x$$ is the output of the ReLU activation), and thus the gap can be non-zero. 
 
-Luckily, this shift in mean can be easily corrected by absorbing $$(W-\hat{W})\mathbb{E}[x]$$ into the bias (subtract $$(W-\hat{W})\mathbb{E}[x]$$ from bias). Since $$W$$ and $$\hat{W}$$ are known after the quantization, we only need to estimate $$\mathbb{E}[x]$$, which can come from two sources
+This shift in mean can be easily corrected by absorbing $$(W-\hat{W})\mathbb{E}[x]$$ into the bias (subtract $$(W-\hat{W})\mathbb{E}[x]$$ from bias) [[Nagel et al. 2019]](#Nagel_et_al_2019). Since $$W$$ and $$\hat{W}$$ are known after the quantization, we only need to estimate $$\mathbb{E}[x]$$, which can come from two sources
 
 * If there is a small amount of input data, it can be used to get an empirical estimate of $$\mathbb{E}[x]$$
 * If $$x$$ is the output of a BatchNorm + ReLU layer, we can use the batch norm statistics to derive $$\mathbb{E}[x]$$
-
-[[Nagel et al. 2019]](#Nagel_et_al_2019)
 
 ---
 ### Adaptive Rounding
@@ -454,7 +487,6 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
         {% include figure.html path="assets/img/blog_img/quantization/adaround.png" class="img-fluid rounded z-depth-1" zoomable=false %}
     </div>
     <div class="col-sm mt-3 mt-md-0">
- 
     </div>
 </div>
 <div class="caption">
