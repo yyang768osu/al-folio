@@ -222,9 +222,9 @@ One problem with this setting is that in practice, weights from different output
     </div>
 </div>
 
-A more flexible setting is to allow different channels to be quantized differently [[Krishnamoorthi 2018]](#Krishnamoorthi_2018), referred to as **per-channel quantization of weight**. This is the setting captured by figure (b) above, and is the case described in Equation \eqref{eq:y_i} where $$s_i^w$$ can be different for different output channel index $$i$$. The hardware implication for this setting is that requantization is no longer uniform across different output channels. This scheme would save us from the disparate dynamic range issue mentioned previous, but not every hardware platform support this setting. 
+A more flexible setting is to allow different channels to be quantized differently [[Krishnamoorthi 2018]](#Krishnamoorthi_2018), referred to as **per-channel quantization of weight**. This is the setting captured by figure (b) above, and is the case described in Equation \eqref{eq:y_i} where $$s_i^w$$ can be different for different output channels with index $$i$$. The hardware implication for this setting is that requantization is no longer uniform across different output channels. This scheme would save us from the disparate dynamic range issue mentioned previous, but not every hardware platform support this setting. 
 
-Both (a) and (b) assume that the entire activation tensor are quantized the same way. The alternative case of **per-channel quantization of activation**, as illustrated in Figure (c), is extremely hard to handle in hardware. In this setting, the accumulator needs to rescaled for each input dimension. As is evident from Equation \eqref{eq:y_i}, having a per-channel quantization of activation implies that the scaling factor for activation should be denoted as $$s_{\color{red}j}^x$$, and as a result we can no longer factor $$s_i^{w}s^x_j$$ outside of the summation across input dimension $$j$$, meaning that each multiply-and-accumulation would require a rescaling operation. Due to its hardware difficulty, most fixed-point accelerators do not support this setting. 
+Both (a) and (b) assume that the activation is quantized in a per-tensor way. The alternative case of **per-channel quantization of activation**, as illustrated in Figure (c), is extremely hard to handle in hardware. In this setting, the accumulator needs to rescaled for each input dimension. As is evident from Equation \eqref{eq:y_i}, having a per-channel quantization of activation implies that the scaling factor for activation should be denoted as $$s_{\color{red}j}^x$$, and as a result we can no longer factor $$s_i^{w}s^x_j$$ outside of the summation across input dimension $$j$$, meaning that each multiply-and-accumulation would require a rescaling operation. Due to its hardware difficulty, most fixed-point accelerators do not support this setting. 
 
 > * **(a) per-tensor quantization**
 >   * base setting supported by all fixed point accelerators
@@ -473,10 +473,10 @@ $$
 Instead of minimizing MSE of the quantized weight, a better target is to minimize the MSE of the activation, which reduces the effect of quantization from an input-output stand point:
 
 $$
-\min_{V\in [0, 1]^{|V|}} \left\|f(Wx) - f\left(\widetilde{W}(V)\hat{x}\right)\right\|_F^2.
+\min_{V\in [0, 1]^{|V|}} \left\|f(Wx) - f\left(\widetilde{W}(V)\bar{x}\right)\right\|_F^2.
 $$
 
-The method of determined whether to round up or round down by optimizing the above objective is called Adaptive Rounding or AdaRound proposed by [[Nagel et al. 2020]](#Nagel_et_al_2020). Note that optimization of the above objective only requires a small amount of representative input data. Please refer to it for details regarding how this integer optimization problem can be solved with relaxation and annealed regularization term that encourage $$V$$ to converge to 0/1. 
+The method of determined whether to round up or round down by optimizing the above objective is called Adaptive Rounding or AdaRound proposed by [[Nagel et al. 2020]](#Nagel_et_al_2020). $$\bar{x}$$ is the activation with all previous layers quantized. Note that optimization of the above objective only requires a small amount of representative input data. Please refer to it for details regarding how this integer optimization problem can be solved with relaxation and annealed regularization term that encourage $$V$$ to converge to 0/1. 
 
 Alternatively, one can use straight-through estimator (STE) to directly optimize for the quantized weight, which allows more flexible quantization beyond just rounding up or down. In the table below, we can see that AdaRound outperforms this STE approach, likely due to biased gradient of STE. 
 
@@ -498,34 +498,98 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
 > * It is only a weight quantization technique
 > * It is applied after the range ($$q_\text{min}$$ and $$q_\text{max}$$, or equivalently $$s$$ and $$z$$) is determined. 
 > * When QAT is applied, AdaRound becomes irrelevant. 
+> * AdaRound absorbs bias correction in it optimization objective ($$f(Wx)$$ should be $$f(Wx+b)$$ in the equations above), so whenever AdaRound is applied, bias correction is not needed.
 
 
 ---
 # PTQ and QAT best practices
 ---
-### PTQ development and debugging pipeline
+### PTQ pipeline and debugging strategy
 ---
+
+**Initial pipeline**
+
+* Add quantizer
+  * Symmetric weight and asymmetric activation weight is recommended
+    * Symmetric is preferred for weight to avoid the second term in Equation \eqref{eq:y_i}.
+  * Per-tensor quantization of weight and activation
+* Range estimate for weight
+  * MSE based range estimate is recommended
+* Range estimate for activation
+  * MSE based range estimate is recommended
+
+**Debug steps**
+
+* Check 32 bit fixed point model matches performance with floating point model or not
+  * A bit-width gives very high precision and should match floating point model
+  * If does not match, check correctness of range learning module and quantizer.
+* Identify which one is the major cause of performance degradation: weight quantization or activation quantization
+  * (A) Apply 32 bit quantization for weight and targeted bit-width for activation
+  * (B) Apply 32 bit quantization for activation and targeted bit-width for weight
+  * Once we confirm which one is for problematic, we can further identify which layer(s) are the bottleneck
+    * We can conduct leave-one-out analysis by quantizing all but one certain layer
+    * and/or add-one-only analysis by quantizing only a single layer
+* If weight quantization causes accuracy drop
+  * Apply CLE as a preprocessing step before quantization
+  * Apply per-channel quantization if it is supported by the target hardware
+  * Apply Adaround if there is a small representative unlabeled dataset available
+  * Apply bias-correction if the dataset if not available, but there is BN, which captures some data statistics
+* If activation quantization causes accuracy drop
+  * Apply CLE that also takes activation range into account [[Meller et al. 2019]](#meller_et_al_2019) before quantization
+  * Apply different range estimate methods (MSE is recommended, but for logit activation, cross-entropy based method can be applied)
+* Visualize the range/distribution for problematic tensors
+  * Break down the range/distribution per-channel, per-dimension, and/or per-token
+  * Set quantization to larger bit-width if permitted by hardware. E.g., changing certain layers from 8-bit to 16-bit. Having heterogenous bit-width across layer is also often referred to as mixed-precision. 
+  * Apply QAT
+
+**Final Pipeline may look like the following**
+
+* Apply CLE
+  * Weight only CLE
+  * or CLE that takes activation into account as well
+* Add quantizer
+  * Symmetric weight and asymmetric activation 
+* Range estimate for weight
+  * MSE based range estimation is recommended
+  * Min/max can also be a good choice if per-channel quantization of weight is used
+* AdaRound or bias-correction
+  * Adjust weight/bias given a fixed range
+* Range estimate for activation
+  * MSE based range estimation is recommended
+  * Cross-entropy can also be a good choice if certain layer contains values interpreted as logits
 
 ---
 ### QAT pipeline
 ---
 
+* Preprocessing of model
+  * Cross-layer-equalization
+  * Absorb batch normalization into weights and biases of the preceding layer
+* Add quantizer
+  * Symmetric weight and asymmetric activation weight is recommended
+    * Symmetric is preferred for weight to avoid the second term in Equation \eqref{eq:y_i}.
+  * Per-tensor quantization of weight and activation
+    * Per-channel quantization is preferable if supported by hardware
+* Range estimate
+  * MSE based range estimation is recommended
+  * It serves as initial quantization parameters
+* Learn quantization parameters together with weights and activations
+  * Gradient of quantization parameters can be derived from Equation \eqref{eq:x_hat_re} and are provided in the three subsequent equations.
+
+
 ---
 # Treatment of special layers
 ---
-### Handling of layers other than Conv and FC
----
 
----
-### Quantization of Transformers
----
+For **addition** operation and **concatenation** operation, we need to make sure that two activations to be added or concatenated live on the same quantization grid, i.e., we need to tie the quantization parameters to be the same for the two activations.
 
-[[Bondarenko et al. 2021]](#bondarenko_et_al_2021)
+So far we have covered Conv and MLP type of linear layers with simple activation functions. BatchNorm an be easily folded into the linear layer so we are also clear how it can be handled. These give great coverage for vision related models, but for the quantization of sequence/NLP models that use transformer, we also need to deal with additional non-linear operators such as LayerNorm, softmax, GeLU. [[Kim et al. 2021]](#Kim_et_al_2021) address this challenge by proposing polynomial approximations to these operations that can be carried out easily in fixed point arithmetic. Also see [[Bondarenko et al. 2021]](#bondarenko_et_al_2021) that proposed a per-embedding-group quantization for PTQ that tackles the structured outliers among certain embedding dimensions of sequences.
 
 ---
 # References
 ---
 - <a name="Nagel_et_al_2021"></a> **\[Nagel et al. 2021\]**  Markus Nagel, Marios Fournarakis, Rana Ali Amjad, Yelysei Bondarenko, Mart van Baalen, Tijmen Blankevoort "*[A White Paper on Neural Network Quantization](https://arxiv.org/abs/2106.08295)*", Arxiv June 2021
+- <a name="Kim_et_al_2021"></a> **\[Kim et al. 2021\]** Sehoon Kim, Amir Gholami, Zhewei Yao, Michael W. Mahoney, Kurt Keutzer "*[I-BERT: Integer-only BERT Quantization](https://proceedings.mlr.press/v139/kim21d.html)*", ICML 2021
 - <a name="bondarenko_et_al_2021"></a> **\[Bondarenko et al. 2021\]** Yelysei Bondarenko, Markus Nagel, Tijmen Blankevoort "*[Understanding and Overcoming the Challenges of Efficient Transformer Quantization](https://aclanthology.org/2021.emnlp-main.627/)*", EMNLP 2021 [code](https://github.com/qualcomm-ai-research/transformer-quantization)
 - <a name="Nagel_et_al_2020"></a> **\[Nagel et al. 2020\]** Markus Nagel, Rana Ali Amjad, Mart Van Baalen, Christos Louizos, Tijmen Blankevoort "*[Up or Down? Adaptive Rounding for Post-Training Quantization](http://proceedings.mlr.press/v119/nagel20a.html)*", ICML 2020
 - <a name="Nagel_et_al_2019"></a> **\[Nagel et al. 2019\]** Markus Nagel, Mart van Baalen, Tijmen Blankevoort, Max Welling, "*[Data-Free Quantization Through Weight Equalization and Bias Correction](https://openaccess.thecvf.com/content_ICCV_2019/html/Nagel_Data-Free_Quantization_Through_Weight_Equalization_and_Bias_Correction_ICCV_2019_paper.html)*", ICCV 2019
