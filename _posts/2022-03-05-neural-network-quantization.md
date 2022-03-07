@@ -9,13 +9,13 @@ description: how to properly quantize neural networks for efficient hardware inf
 
 > This post is a reading note of the paper [A White Paper on Neural Network Quantization](https://arxiv.org/abs/2106.08295) [[Nagel et al. 2021]](#Nagel_et_al_2021) with additional illustrations and explanations that help my understanding (hopefully can help yours too). The same materials can be found in the paper and the references therein. You are highly encouraged to read the paper first and the references if you want to go into depth for certain topics.
 
-Neural network model quantization enables fast network inference using efficient fixed point arithmetics in typical AI hardware accelerators. Compared with floating point inference, it allows less storage space, smaller memory footprint, lower power consumption, and faster inference speed, all of which are essential for practical edge deployment of deep learning solutions. It is thus a critical step in the model efficient pipeline. In this post, based off [[Nagel et al. 2021]](#Nagel_et_al_2021), we provide a detailed guide to network quantization.  
+Quantization of neural network model enables fast inference using efficient fixed point operations in typical AI hardware accelerators. Compared with floating point inference, it enables less storage space, smaller memory footprint, lower power consumption, and faster inference speed, all of which are essential for practical edge deployment. It is thus a critical step in the model efficient pipeline. In this post, based off [[Nagel et al. 2021]](#Nagel_et_al_2021), we provide a detailed guide to network quantization.  
 
 ---
 
-We start off with the basics in the first section by first going through the conversion of floating point and fixed point and introduce necessary notations. Followed by showing how fixed point arithmetic works in a typical hardware accelerator and the way to simulate it using floating point operation. And lastly define terminology of Post-Training-Quantization (PTQ) and Quantization-Aware-Training (QAT).
+We start off with the basics in the first section by first going through the conversion of floating point and fixed point representations and introduce necessary notations. Followed by showing how fixed point arithmetic works in a typical hardware accelerator and the way to simulate it using floating point operation. And lastly define terminology of Post-Training-Quantization (PTQ) and Quantization-Aware-Training (QAT).
 
-The second section covers four techniques for improved quantization performance, which are mostly designed targeting PTQ, with some also serving as a necessary step to get good parameter initialization for QAT.
+The second section covers four techniques to improve quantization performance, which are mostly designed targeting PTQ, with some also serving as a necessary step to get good initialization for QAT.
 
 In the last part, we go over the recommended pipeline and practices of PTQ and QAT as suggested by [the white paper](https://arxiv.org/abs/2106.08295) [[Nagel et al. 2021]](#Nagel_et_al_2021) and discuss how special layers other than Conv/FC can be handled. Here's an outline.
 
@@ -43,7 +43,7 @@ x_\text{int} = \texttt{clamp}(\lfloor x/s \rceil + z; n, p),\label{eq:xint_x}
 \end{align}
 $$
 
-where $$\lfloor\cdot\rceil$$ denotes rounding-to-nearest operation and $$\texttt{clamp}(\cdot: n, p)$$ clips its input to within $$[n, p]$$
+where $$\lfloor\cdot\rceil$$ denotes rounding-to-nearest operation and $$\texttt{clamp}(\cdot: n, p)$$ clips its input to within $$[n, p]$$. $$s$$ and $$z$$ are often referred to as *scale* and *offset*. 
 
 <div class="row mt-3">
     <div class="col-sm-1 mt-3 mt-md-0">
@@ -73,12 +73,12 @@ $$
 \end{align}
 $$
 
-Here we denote $$q_\text{min}\triangleq s(n-z)$$ and $$q_\text{max}\triangleq s(p-z)$$ as the floating point values corresponding to two limits on the fixed point grid. The quantization error of $$x-\hat{x}$$ comes from two competing factors: clipping and rounding. Increasing $$s$$ reduces the clipping error at the cost of increased rounding error. Decreasing $$s$$ reduces rounding error with higher chance for clipping. This is sometimes referred to as *range and precision tradeoff*.
+Here we denote $$q_\text{min}\triangleq s(n-z)$$ and $$q_\text{max}\triangleq s(p-z)$$ as the floating point values corresponding to two limits on the fixed point grid. The quantization error of $$x-\hat{x}$$ comes from two competing factors: clipping and rounding. Increasing $$s$$ reduces the clipping error at the cost of increased rounding error. Decreasing $$s$$ reduces rounding error with higher chance for clipping. This is referred to as *range and precision tradeoff*.
 
 ---
 
-To avoid getting "lost in notation" with the many we introduced ($$n$$, $$p$$, $$b$$, $$z$$, $$s$$, $$q_\text{min}$$, $$q_\text{max}$$, $$x$$, $$\hat{x}$$, $$x_\text{int}$$), it is important to keep the following in mind:
-* $$n$$, $$p$$, and $$b$$ are determined by integer type that is available to us. They describe the hardware constraints and are not something we can control (*nor is there a need to control them!*)
+To avoid getting "lost in notation" for the many that we introduced ($$n$$, $$p$$, $$b$$, $$z$$, $$s$$, $$q_\text{min}$$, $$q_\text{max}$$, $$x$$, $$\hat{x}$$, $$x_\text{int}$$), it is important to keep the following in mind:
+* $$n$$, $$p$$, and $$b$$ are determined by the integer type that is available to us. They describe the hardware constraints and are not something we can control (*nor is there a need to control them!*)
   * For 8-bit signed integer we have $$n=-128$$ and $$p=127$$
   * For 8-bit unsigned integer we have $$n=0$$ and $$p=255$$
   * For bit-width of $$b$$, we have $$p-n+1 = 2^b$$ 
@@ -91,12 +91,12 @@ To avoid getting "lost in notation" with the many we introduced ($$n$$, $$p$$, $
   * Derive $$(s, z)$$ from $$(q_\text{min}, q_\text{max})$$:
     * $$s = (q_\text{max} - q_\text{min}) / 2^b $$.
     * $$z = n - q_\text{min}/s = p - q_\text{max}/s$$.
-  * $$z=0$$ is often referred to as **symmetric quantization**
-    * Note that **symmetric quantization** does not imply that we have equal number of grid on either side of integer $0$, but rather just the fact that floating point $$0$$ is mapped to integer $$0$$ in the fixed point representation
+  * $$z=0$$ is referred to as **symmetric quantization**
+    * Note that **symmetric quantization** does not imply that we have equal number of grid points on either side of integer $$0$$, but rather just the fact that floating point $$0$$ is mapped to integer $$0$$ in the fixed point representation
 
 
 * Among the different variables, $$z$$ and $$x_\text{int}$$ are fixed point number whereas $$x$$, $$\hat{x}$$, $$s$$ are floating point numbers
-  * We want to carry out all arithmetic operations in the fixed point domain, so ideally only offset $$z$$ and $$x_\text{int}$$ are involved in hardware multiplication and summation.
+  * We want to carry out all operations in the fixed point domain, so ideally only offset $$z$$ and $$x_\text{int}$$ should be involved in hardware multiplication and summation.
 
 
 * The fact that floating point $$0$$ maps to an integer $$z$$ ensures that there is no quantization error in representing floating point $$0$$
@@ -104,20 +104,20 @@ To avoid getting "lost in notation" with the many we introduced ($$n$$, $$p$$, $
 
 ---
 
-The important take away here is that there are two equivalent definitions of quantization parameters:
+An important take-away here is that there are two equivalent definitions of quantization parameters:
 
 > * **Quantization parameters** are either $$(s, z)$$ or $$(q_\text{min}, q_\text{max})$$
->   * In the context of QAT, we often think about $$(s, z)$$ as they are directly trainable
->   * In the context of PTQ, we often think about $$(q_\text{min}, q_\text{max})$$
->   * **Range estimation** refers to estimate of $$(q_\text{min}, q_\text{max})$$
+>   * In the context of QAT, we talk about $$(s, z)$$ more as they are directly trainable
+>   * In the context of PTQ, $$(q_\text{min}, q_\text{max})$$ is used more often
+>   * **Range estimation** refers to the estimation of $$(q_\text{min}, q_\text{max})$$
 
 ---
 ### Fixed point arithmetic
 ---
 
-Now that we have learned how to map number from floating point to fixed point, next we will show how we can use fixed point arithmetic to approximate floating point operations. 
+Now that we have covered  how to map number from floating point to fixed point format, next we will show how we can use fixed point arithmetic to approximate floating point operations. 
 
-Let us first look at an easy case of scalar multiplication $$y = wx$$, and denote the quantization parameters of $$w, x, y$$ as $$(s_w, z_w), (s_x, z_x), (s_y, z_y)$$. From Equation \eqref{eq:xhat_xint}, the quantized version of $$w$$ and $$x$$ can be expressed as
+Let's first take a look at an easy case of scalar multiplication $$y = wx$$, and denote the quantization parameters of $$w, x, y$$ as $$(s_w, z_w), (s_x, z_x), (s_y, z_y)$$. From Equation \eqref{eq:xhat_xint}, the quantized version of $$w$$ and $$x$$ can be expressed as
 
 $$
 \begin{align*}
@@ -142,7 +142,19 @@ wx \approx& \hat{w}\hat{x} \\
 \end{align*}
 $$ 
 
-It should be clear that all terms inside the square bracket above can be carried out in fixed point arithmetic. Since integer multiplication will inflate the bit-width, and also we need to accumulate different terms, the result of inside the bracket is typically stored in high bit-width accumulator (e.g., 32-bit accumulator). In the example below, we illustrate the case when $$z_w$$ $$z_x$$ and $$z_y$$ are all $$0$$.
+It should be clear that all terms inside the square bracket above can be carried out in fixed point operations. Since integer multiplication will inflate bit-width (the product of two 8-bit numbers will take 16-bit), and also we need to accumulate different terms, the result inside the bracket is typically stored in high bit-width accumulator (e.g., 32-bit accumulator). 
+
+
+We are not done yet -- we still need to fit $$\hat{w}\hat{x}$$ to the quantization grid chosen for $$y$$. In other words, we need to map it to the fixed point format indicated by $$(s_y, z_y)$$ using the Equation \eqref{eq:xint_x}, a step referred to as **requantization**:
+
+$$
+\begin{align*}
+y_\text{int} =& \texttt{clamp}\left(\left\lfloor \frac{\hat{w}\hat{x}}{s_y} \right\rceil + z_y; n, p\right)\\
+             =& \texttt{clamp}\left(\left\lfloor \frac{s_w s_x}{s_y}\times{\color{blue}\text{Accumulator}} \right\rceil + z_y; n, p\right).
+\end{align*}
+$$
+
+In the figure below, we illustrate an example when $$z_w$$ $$z_x$$ and $$z_y$$ are all $$0$$.
 
 <div class="row mt-3">
     <div class="col-sm-2 mt-3 mt-md-0">
@@ -154,20 +166,11 @@ It should be clear that all terms inside the square bracket above can be carried
     </div>
 </div>
 
-We are not done yet -- we still need to fit the result of $$\hat{w}\hat{x}$$ to the quantization grid for $$y$$. In other words, we need to map it to the fixed point format indicated by $$(s_y, z_y)$$ using the Equation \eqref{eq:xint_x}, a step referred to as **requantization**.
-
-$$
-\begin{align*}
-y_\text{int} =& \texttt{clamp}\left(\left\lfloor \frac{\hat{w}\hat{x}}{s_y} \right\rceil + z_y; n, p\right)\\
-             =& \texttt{clamp}\left(\left\lfloor \frac{s_w s_x}{s_y}\times{\color{blue}\text{Accumulator}} \right\rceil + z_y; n, p\right)
-\end{align*}
-$$
-
-The problem here is that $$\frac{s_w s_x}{s_y}$$ is a floating point number, and we need to multiply it with the fixed point value in the high bit-width accumulator. This can be carried out in hardware if we approximate $$\frac{s_w s_x}{s_y}$$ with the form of $${\color{blue}a}2^{n}$$ where $${\color{blue}a}$$ is a fixed point number and $$n$$ is an integer, in which case requantization can be efficiently done by the multiplication of two fixed point numbers (value in the high bit-width accumulator, and $$a$$) followed by a bit-shift. How this operation is done can be specific to different hardware. The procedure of requantization are also described in Equation (5) and (6) in [[Jacob et al. 2018]](#Jacob_et_al_2018).
+The problem here is that $$\frac{s_w s_x}{s_y}$$ is a floating point number, and we need to multiply it with the fixed point value in the high bit-width accumulator. This can be carried out in hardware if we approximate $$\frac{s_w s_x}{s_y}$$ with the form of $${\color{blue}a}2^{n}$$ where $${\color{blue}a}$$ is a fixed point number and $$n$$ is an integer, in which case requantization can be efficiently done by the multiplication of two fixed point numbers (value in the high bit-width accumulator, and $$a$$) followed by a bit-shift. How this operation is carried out can be hardware specific. The procedure of requantization are also described in Equation (5) and (6) in [[Jacob et al. 2018]](#Jacob_et_al_2018).
 
 ---
 
-Next we generalize the notation from the previous scalar multiplication to the case of matrix-vector product with bias $$y = W x + b$$. For the weight matrix $$W$$, the $$i^\text{th}$$ row is responsible for computing the $$i^\text{th}$$ output element, which is referred to as **output channel**, expressed as below
+Next we generalize the simple case of scalar multiplication to matrix-vector product with bias $$y = W x + b$$. For the weight matrix $$W$$, the $$i^\text{th}$$ row is responsible for computing the $$i^\text{th}$$ output element, which is referred to as **output channel**, expressed as below
 
 $$
 \begin{align}
@@ -199,7 +202,7 @@ A few remarks are due:
   * It should be clear that in order for the bias to be easily added to the accumulator, we should fix its scale to be $$s_i^b = s_i^ws^x$$. In other words, the scale of bias is a not a free variable that we can control.
   * Since $$b_\text{int}$$ can be directly added to the high bit-width accumulator directly, we normally don't need to be concerned regarding clipping error of bias quantization.
 * For the four terms inside the square bracket
-  * The last two are not input dependent and can be pre-computed, merged with bias, and pre-loaded to the accumulator together, with no additional inference cost.
+  * The last two are not data dependent and can be pre-computed, merged with bias, and pre-loaded to the accumulator together, with no additional inference cost.
   * The second one, however, is data dependent, but vanishes if weight offset $$z_i^w$$ is zero. To save compute, a common approach is to keep weight quantization to be symmetric (i.e., $$z_i^w=0$$) so that this terms goes away. 
 * The output $$y$$ typical goes through nonlinear activation functions
   * Some activation functions such as ReLU can be directly applied in the accumulator before requantization is applied.
@@ -210,11 +213,11 @@ A few remarks are due:
 ### Per-tensor vs per-channel quantization
 ---
 
-In Equation \eqref{eq:y_i} we describe the operations needed to obtain the result of the $$i^\text{th}$$ output channel. One assumption made is that weights for the same output channel ($$W_{i\cdot}=W_{i,1}, W_{i,2}, \ldots$$ corresponds to the $$i^\text{th}$$ output channel) share the same quantization parameters, denoted as $$s_i^w$$ and $$z_i^w$$, and that all the elements in the input tensor $$x=[x_1, x_2, \ldots]$$ shares the same quantization parameters denoted as $$s^x$$ and $$z^x$$.
+Equation \eqref{eq:y_i} describes the operations needed to obtain the result of the $$i^\text{th}$$ output channel. One assumption made is that weights for the same output channel ($$W_{i\cdot}=W_{i,1}, W_{i,2}, \ldots$$ corresponds to the $$i^\text{th}$$ output channel) share the same quantization parameters, denoted as $$s_i^w$$ and $$z_i^w$$, and that all the elements in the input tensor $$x=[x_1, x_2, \ldots]$$ shares the same quantization parameters denoted as $$s^x$$ and $$z^x$$. In this part we review different choices of quantization granularity.
 
-A common setting is to have a single set of quantization parameters for the entire weight tensor, which correspond to figure (a) illustrated below. This is referred to as **per tensor quantization**. In this case, all the output channels have the same scaling factor $$s^ws^x$$, and thus the requantization operation is uniform across all the output channels.
+One common setting is to have a single set of quantization parameters for the entire weight tensor, which correspond to figure (a) illustrated below. This is referred to as **per tensor quantization**. In this case, all the output channels of the weights share the same scaling factor $$s^ws^x$$, and thus the requantization operation is uniform across all the output channels.
 
-One problem with this setting is that in practice, weights from different output channels could have a wide difference in their dynamic ranges. E.g., weights in a first channel may range from $$-500.0$$ to $$500.0$$ while the second from $$-1.0$$ to $$1.0$$. If we pick quantization parameters that covers $$[-500, 500]$$ in 8-bit, the second channel will be completely quantized away (i.e., quantized to $$0$$, aka underflow), losing all its information. On the other hand, if we fit the range to $$[-1, 1]$$, the first channel will suffer from huge clipping error. In the later section a technique called **cross layer equalization** is introduced to alleviate this issue by trying to equalize range for different channels.
+One problem with this setting is that in practice, weights from different output channels could have a wide difference in their dynamic ranges. E.g., weights in a first channel may range from $$-500.0$$ to $$500.0$$ while the second from $$-1.0$$ to $$1.0$$. If we pick quantization parameters to $$[-500, 500]$$ in 8-bit, the second channel will be completely quantized away (i.e., quantized to $$0$$, aka underflow), losing all its information. On the other hand, if we fit the range to $$[-1, 1]$$, the first channel will suffer from huge clipping error. In one of the later sections a technique called **cross layer equalization** is introduced to alleviate this issue by trying to equalize range for different channels.
 
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
@@ -222,24 +225,24 @@ One problem with this setting is that in practice, weights from different output
     </div>
 </div>
 
-A more flexible setting is to allow different channels to be quantized differently [[Krishnamoorthi 2018]](#Krishnamoorthi_2018), referred to as **per-channel quantization of weight**. This is the setting captured by figure (b) above, and is the case described in Equation \eqref{eq:y_i} where $$s_i^w$$ can be different for different output channels with index $$i$$. The hardware implication for this setting is that requantization is no longer uniform across different output channels. This scheme would save us from the disparate dynamic range issue mentioned previous, but not every hardware platform support this setting. 
+A more flexible setting is to allow different channels to be quantized differently [[Krishnamoorthi 2018]](#Krishnamoorthi_2018), referred to as **per-channel quantization of weight**. This is the setting captured by figure (b) above, and is the case described in Equation \eqref{eq:y_i} where $$s_i^w$$ can be different for different output channels with index $$i$$. The hardware implication for this setting is that requantization is no longer uniform across different output channels. This scheme would save us from the varying dynamic range issue mentioned before, but not every hardware platform support this setting. 
 
-Both (a) and (b) assume that the activation is quantized in a per-tensor way. The alternative case of **per-channel quantization of activation**, as illustrated in Figure (c), is extremely hard to handle in hardware. In this setting, the accumulator needs to rescaled for each input dimension. As is evident from Equation \eqref{eq:y_i}, having a per-channel quantization of activation implies that the scaling factor for activation should be denoted as $$s_{\color{red}j}^x$$, and as a result we can no longer factor $$s_i^{w}s^x_j$$ outside of the summation across input dimension $$j$$, meaning that each multiply-and-accumulation would require a rescaling operation. Due to its hardware difficulty, most fixed-point accelerators do not support this setting. 
+Both (a) and (b) assume that the activation is quantized in a per-tensor fashion. The alternative option of **per-channel quantization of activation**, as illustrated in Figure (c), is extremely hard to handle in hardware. In this setting, the accumulator needs to rescaled for each input dimension. As is evident from Equation \eqref{eq:y_i}, having a per-channel quantization of activation implies that the scaling factor for activation should be denoted as $$s_{\color{red}j}^x$$, and as a result we can no longer factor $$s_i^{w}s^x_j$$ outside of the summation across input dimension $$j$$, meaning that each multiply-and-accumulation would require a rescaling operation. Due to its hardware difficulty, most fixed-point accelerators do not support this setting. 
 
 > * **(a) per-tensor quantization**
 >   * base setting supported by all fixed point accelerators
->   * can suffer from large quantization error due to difference in dynamic range across different output channels of the weight
+>   * can suffer from large quantization error due to varying dynamic ranges across different output channels of the weight
 > * **(b) per-channel quantization of weights**
 >   * also simply referred to as **per-channel quantization** 
->   * it becomes a general trend, although not all hardware support it.
+>   * it becomes a general trend, although not all hardware support it
 > * **(c) per-channel quantization of activation**
->   * as of now this is not generally considered as a viable solution due to the difficulty in hardware implementation.
+>   * as of now this is not generally considered as a viable solution due to the difficulty in hardware implementation
 
 ---
 ### Quantization simulation and gradient computation
 ---
 
-Fixed point operation can be simulated with flow-point training if we map the weight $$W$$ and activation $$x$$ values to its quantized version $$\widehat{W}$$ and $$\hat{x}$$. The mapping is described in Equation \eqref{eq:x_hat} and re-stated below.
+Fixed point operation can be simulated with floating-point training if we map the weight $$W$$ and activation $$x$$ values to its quantized version $$\widehat{W}$$ and $$\hat{x}$$. The mapping is described in Equation \eqref{eq:x_hat} and re-stated below.
 
 $$
 \begin{align}
@@ -254,7 +257,7 @@ $$
 \end{align}
 $$
 
-The schematic below illustrate how simulated quantization described by the equation above is added to a typical network layer.
+The schematic below illustrate how simulated quantization described by this equation above can be added to a typical network layer.
 
 <div class="row mt-3">
     <div class="col-sm-2 mt-3 mt-md-0">
@@ -269,17 +272,17 @@ The schematic below illustrate how simulated quantization described by the equat
     Quantization simulation
 </div>
 
-From Equation \eqref{eq:x_hat_re} we can derive the gradient of quantization value with respect to input, and quantization parameters ($$s$$ and $$z$$) as the following. In order back-propagate through rounding $$\lfloor\cdot\rceil$$, the straight-through estimator $$\partial \lfloor x \rceil/\partial x \approx 1$$ is used (denoted as $$\overset{\text{st}}{\approx}$$ below).
+From Equation \eqref{eq:x_hat_re} we can derive the gradient of the quantized value with respect to the input as well as the quantization parameters ($$s$$ and $$z$$) as the following. In order back-propagate through rounding $$\lfloor\cdot\rceil$$, the straight-through estimator $$\partial \lfloor x \rceil/\partial x \approx 1$$ is used (denoted as $$\overset{\text{st}}{\approx}$$ below).
 
 $$
-\begin{align*}
+\begin{align}
 \frac{\partial \hat{x}}{\partial x} =& \left\{
   \begin{array}{ll}
   s \frac{\partial}{\partial x}\left\lfloor x/s\right\rceil \overset{\text{st}}{\approx} 1 &\text{if } q_\text{min} \leq x \leq q_\text{max} \\
   0 & \text{if } x < q_\text{min} \\
   0 & \text{if } x > q_\text{max}
   \end{array}
-  \right.\\
+  \right.\label{eq:d_hatx_dx}\\
 
 \frac{\partial \hat{x}}{\partial s} =& \left\{
   \begin{array}{ll}
@@ -287,7 +290,7 @@ $$
   n - z  & \text{if } x < q_\text{min} \\
   p - z & \text{if } x > q_\text{max}
   \end{array}
-  \right. \\
+  \right. \label{eq:d_hatx_ds}\\
   
 \frac{\partial \hat{x}}{\partial z} =& \left\{
   \begin{array}{ll}
@@ -295,8 +298,8 @@ $$
   -s & \text{if } x < q_\text{min} \\
   -s & \text{if } x > q_\text{max}
   \end{array}
-  \right.
-\end{align*}
+  \right. \label{eq:d_hatx_dz}
+\end{align}
 $$
 
 ---
@@ -305,11 +308,11 @@ $$
 
 There are two different model quantization methodologies: **Post Training Quantization (PTQ)**  and **Quantization Aware Training (QAT)**. 
 
-In post training quantization (PTQ), a floating-point trained model is converted to a fixed point one *without any end-to-end training pipeline*. The task here is to find ranges (quantization parameters) for each weight and activation either without any data or with a small representative unlabelled dataset, which is often available. Since no end-to-end training is involved, it decouples model training from model quantization, which allows fast prototyping of the model. 
+In post training quantization (PTQ), a well-trained floating-point model is converted to a fixed point one *without any end-to-end training*. The task here is to find ranges (quantization parameters) for each weight and activation, and this is done either without any data or with only a small representative unlabelled dataset, which is often available. Since no end-to-end training is involved, it decouples model training from model quantization, which allows fast prototyping of the model. 
 
-Quantization aware quantization (QAT), by contrast, integrates quantization operation as part of the model, and train the quantization parameters together with its underlying floating point weights, where the gradient of the quantization operation is described in the previous section, is used for. Here we need access to full training dataset. Setting up the training pipeline that involves quantization simulation can be a tedious process and requires more effort than PTQ, but it often results in close-to-floating-point performance, sometimes even with very low bit-width.
+Quantization aware quantization (QAT), by contrast, integrates quantization operation as part of the model, and train the quantization parameters together with its neural network parameters, where the backward flow throw the quantization operation is described in the previous section. Here we need to access full training dataset. Setting up the training pipeline that involves simulated quantization can be a difficult process and requires more effort than PTQ, but it often results in close-to-floating-point performance, sometimes even with very low bit-width.
 
-In the next section, we first go over some baseline quantization range estimation methods, and then describe three techniques that boosts PTQ performance. Keep in mind though that some of the PTQ techniques can lead to better initialization for QAT and thus can be helpful in the QAT context as well.
+In the next section, we first go over some baseline quantization range estimation methods, and then describe three techniques that boost PTQ performance. Keep in mind that some of the PTQ techniques can lead to better initialization for QAT and thus can be very relevant in the QAT context as well.
 
 ---
 # Quantization techniques 
@@ -317,7 +320,7 @@ In the next section, we first go over some baseline quantization range estimatio
 ### Range Estimation Methods
 ---
 
-This part covers how the range ($$q_\text{min}, q_\text{max}$$) of weight and/or activation can be estimated. As noted previously, $$(q_\text{min}, q_\text{max})$$, or equivalently $$(s, z)$$, uniquely determine the quantization scheme for a given fixed-point format $$(b, n, p)$$. All these approaches need some statistical information of the data to be quantized. For weight, this is readily available, and for activation, it can be estimated with a small set of representative input data.
+This part covers how the range ($$q_\text{min}, q_\text{max}$$) of weight and/or activation can be estimated. As noted before, $$(q_\text{min}, q_\text{max})$$, or equivalently $$(s, z)$$, uniquely determine the quantization scheme for a given fixed-point format $$(b, n, p)$$. All these approaches need some statistical information of the data to be quantized. For weight, this is readily available, and for activation, it can be estimated with a small set of representative input data.
 
 
 <ins>**Min-Max**</ins>
@@ -335,26 +338,26 @@ The downside of this approach is that a large rounding error may be incurred if 
 
 <ins>**MSE**</ins>
 
-To strike the right balance between range and precision, we can instead minimize the mean-square-error (MSE) of the quantized value with the floating point one, 
+To strike the right balance between range and precision, we can instead minimize the mean-square-error (MSE) between the quantized values and the floating point ones, 
 
 $$\underset{q_\text{min},q_\text{max}}{\arg\min} \|x-\hat{x}\|_F^2.$$ 
 
-[[Banner et al. 2019]](#banner_et_al_2019) introduced an analytical approximation of the above objective when $$x$$ follows either Laplace or Gaussian distribution (or one-sided Gaussian/Laplace if $$x$$ is output of ReLU activation). Alternative, a simple grid search could also work. 
+[[Banner et al. 2019]](#banner_et_al_2019) introduced an analytical approximation of the above objective when $$x$$ follows either Laplace or Gaussian distribution (or one-sided Gaussian/Laplace if $$x$$ is output of ReLU activation). Alternative, a simple grid search also works. 
 
 <ins>**Cross-Entropy**</ins>
 
-For model with last year being a softmax, we can quantize the last layer activation (which are logits) to minimize the error in probability space, instead of MSE.
+For model with the last layer being a softmax, we can derive quantization parameters of the last layer activation (which are logits) by minimizing the error in probability space, instead of MSE.
 
 $$\underset{q_\text{min},q_\text{max}}{\arg\min}\text{ }\texttt{CrossEntropy}(\texttt{softmax}(x),\texttt{softmax}(\hat{x}))$$ 
 
 
 <ins>**BatchNorm**</ins>
 
-In layers with batch normalization layer, we can use its learn parameters (mean $$\beta$$ and std $$\beta$$) to approximate min and max as $$q_\text{min}\approx \beta - \alpha\gamma$$ and $$q_\text{max} \approx \beta + \alpha\gamma$$ where $$\alpha=6$$ is recommended. 
+In layers with BatchNorm, we can use its learned parameters (mean $$\beta$$ and std $$\beta$$) to approximate min and max as $$q_\text{min}\approx \beta - \alpha\gamma$$ and $$q_\text{max} \approx \beta + \alpha\gamma$$ where $$\alpha=6$$ is recommended. 
 
-One minor detail for all the above approach is that the value of $$q_\text{min}$$ and $$q_\text{max}$$ needs to tweaked to ensure that the corresponding offset $$z$$ is an integer value on the grid.
+One minor detail for all the above approaches is that the value of $$q_\text{min}$$ and $$q_\text{max}$$ needs to tweaked to ensure that the corresponding offset $$z$$ is an integer value on the grid.
 
-> Empirically, **MSE**-based method is the most robust across different models and bit-width settings is the recommended method for range estimation. For logit activation, **Cross-Entropy** based method can be beneficial especially in low bit-width regime (4-bit or below).
+> Empirically, **MSE**-based method is the most robust across different models and bit-width settings, and thus is the recommended method for range estimation. For logit activation, **Cross-Entropy** based method can be beneficial especially in low bit-width regime (4-bit or below).
 
 ---
 ### Cross Layer Equalization
@@ -362,7 +365,7 @@ One minor detail for all the above approach is that the value of $$q_\text{min}$
 
 We have mentioned that per-tensor quantization of weight can be problematic when weights for different output channels have significantly different ranges. The issue can be side-stepped using per-channel quantization of weights, but not all hardware supports it. 
 
-Turns out there is a quite smart way to re-scale the weights across different layers without changing the floating model's output but makes it much more friendly to per-tensor quantization. The technique is called Cross layer equalization, proposed by [[Nagel et al. 2019]](#Nagel_et_al_2019) and [[Meller et al. 2019]](#meller_et_al_2019). Let's go over it.
+Turns out there is a quite smart way to re-scale the weights across different layers without changing the floating model's output, but can make it much more friendly to per-tensor quantization. The technique is called Cross Layer Equalization (CLE), proposed by [[Nagel et al. 2019]](#Nagel_et_al_2019) and [[Meller et al. 2019]](#meller_et_al_2019). Let's go over it.
 
 A linear map $$f$$ satisfies two properties: (1) additivity: $$f(a+b)=f(a)+f(b)$$, and (2) scale equivariant $$sf(a) = f(sa)$$ (scaled input leads scaled output). Some of the most commonly used nonlinear activation functions such as ReLU or leaky ReLU only give up the first property but still have the second property hold for any positive scaling factor $$s$$.
 
@@ -394,14 +397,14 @@ $$
 \end{align*}
 $$
 
-This is illustrated in the figure below, where we take as an example two 1x1 convolution with a ReLU in between.
+This is illustrated in the figure below, where we take as an example two 1x1 convolutions with a ReLU in between.
 <div class="row mt-3">
     <div class="col-sm mt-3 mt-md-0">
         {% include figure.html path="assets/img/blog_img/quantization/cross_layer_equalization.png" class="img-fluid rounded z-depth-1" zoomable=false %}
     </div>
 </div>
 
-Intuitively, we want to redistribute the magnitude of weights between the weight tensors in such a way that the maximum magnitude can be equalized. In other words, whenever the range of $$W^{(1)}_{i\cdot}$$ is larger than that of $$W^{(2)}_{\cdot i}$$, there is an incentive to scale down $$W^{(1)}_{i\cdot}$$ to the point that they match in their range. With this intuition in mind, we can derive the scaling factor to be applied for each channel $$i$$ (output channel of $$W^{(1)}$$ and input channel of $$W^{(2)}$$):
+Intuitively, we want to redistribute the magnitude of weights between the two weight tensors in such a way that the maximum magnitude can be equalized. In other words, whenever the range of $$W^{(1)}_{i\cdot}$$ is larger than that of $$W^{(2)}_{\cdot i}$$, there is an incentive to down scale  $$W^{(1)}_{i\cdot}$$ and up scale $$W^{(2)}_{\cdot i}$$ to the point that they match in their range. With this intuition in mind, we can find the scaling factors to be applied for each channel $$i$$ as (output channel of $$W^{(1)}$$ and input channel of $$W^{(2)}$$):
 
 $$
 \begin{align*}
@@ -411,11 +414,11 @@ $$
 \max\left|W_{i\cdot}^{(1)}\right|
 }{
 \max\left| W_{\cdot i}^{(2)}\right|
-}}
+}}.
 \end{align*}
 $$
 
-Cross layer equalization with the scaling derived as above is a super effective way to boost performance of PTQ when per-tensor quantization of weight is applied. It is especially critical for models that use depth-wise separate convolution, which empirically leads to large variation in magnitude of weights from different channels. Below is Table 3 from [[Nagel et al. 2021]](#Nagel_et_al_2021), where it shows that applying CLE on the floating point model before PTQ can fix the PTQ performance from a completely breakdown to less than 2 percent loss compared with floating point. 
+Cross layer equalization with the scaling factor derived as above is a super effective way to boost performance of PTQ when per-tensor quantization of weight is applied. It is especially critical for models that use depth-wise separate convolution, which empirically leads to large variation in magnitude of weights from different channels. Below is Table 3 from [[Nagel et al. 2021]](#Nagel_et_al_2021), where it shows that applying CLE on the floating point model before PTQ can fix the PTQ performance from a completely breakdown to less than 2 percent loss compared with floating point. 
 
 <div class="row mt-3">
     <div class="col-sm-3 mt-3 mt-md-0">
@@ -432,19 +435,19 @@ Cross layer equalization with the scaling derived as above is a super effective 
 
 > To summarize, CLE is a technique that adjust weights of a floating point model so that it becomes more friendly with per-tensor quantization of weights. Some remarks below
 > * In the context of PTQ, CLE is a must have whenever per-tensor quantization is applied.
-> * In the context of QAT, CLE still is a necessary preprocessing step of the model to get a good initialization of the per-tensor quantization parameters. 
+> * In the context of QAT, CLE still is a necessary model-preprocessing step to get a good initialization of the per-tensor quantization parameters. 
 > * A limitation for CLE is that it cannot handle pair of layers where there is skip connection to or from the activation in the middle.
-> * [[Meller et al. 2019]](#meller_et_al_2019) proposes to apply equalization that also takes the activation tensor in the middle into account
-> * To apply CLE to a model, the process is iterated for every pairs of layers (that does not have skip connection to or from the middle layer) sequentially until convergence. 
+> * [[Meller et al. 2019]](#meller_et_al_2019) proposes to apply equalization that also takes  into account the activation tensor in the middle
+> * To apply CLE to a deep model, the process is iterated for every pairs of layers (that does not have skip connection to or from the middle layer) sequentially until convergence. 
 
 
 ---
 ### Bias Correction 
 ---
 
-Quantization of weights can lead to a shift in mean value of the output distribution. Specifically, for a linear layer with weight $$W$$ and input of $$x$$, the gap between the mean output of quantized weight $$\hat{W}$$ and its floating point counterpart $$W$$  can be expressed as $$\mathbb{E}[\hat{W}x] - \mathbb{E}[Wx] = (W-\hat{W})\mathbb{E}[x]$$. Given that $$x$$ is the activation of the previous layer, $$\mathbb{E}[x]$$ is often non-zero (e.g., if $$x$$ is the output of the ReLU activation), and thus the gap can be non-zero. 
+Quantization of weights can lead to a shift in the mean value of the output distribution. Specifically, for a linear layer with weight $$W$$ and input $$x$$, the gap between the mean output of quantized weight $$\hat{W}$$ and its floating point counterpart $$W$$  can be expressed as $$\mathbb{E}[\hat{W}x] - \mathbb{E}[Wx] = (W-\hat{W})\mathbb{E}[x]$$. Given that $$x$$ is the activation of the previous layer, $$\mathbb{E}[x]$$ is often non-zero (e.g., if $$x$$ is the output of the ReLU activation), and thus the gap can be non-zero. 
 
-This shift in mean can be easily corrected by absorbing $$(W-\hat{W})\mathbb{E}[x]$$ into the bias (subtract $$(W-\hat{W})\mathbb{E}[x]$$ from bias) [[Nagel et al. 2019]](#Nagel_et_al_2019). Since $$W$$ and $$\hat{W}$$ are known after the quantization, we only need to estimate $$\mathbb{E}[x]$$, which can come from two sources
+This shift in mean can be easily corrected by absorbing $$(W-\hat{W})\mathbb{E}[x]$$ into the bias term (subtract $$(W-\hat{W})\mathbb{E}[x]$$ from bias) [[Nagel et al. 2019]](#Nagel_et_al_2019). Since $$W$$ and $$\hat{W}$$ are known after the quantization, we only need to estimate $$\mathbb{E}[x]$$, which can come from two sources
 
 * If there is a small amount of input data, it can be used to get an empirical estimate of $$\mathbb{E}[x]$$
 * If $$x$$ is the output of a BatchNorm + ReLU layer, we can use the batch norm statistics to derive $$\mathbb{E}[x]$$
@@ -453,9 +456,9 @@ This shift in mean can be easily corrected by absorbing $$(W-\hat{W})\mathbb{E}[
 ### Adaptive Rounding
 ---
 
-In PTQ, after the quantization range $$[q_\text{min}, q_\text{max}]$$ (or equivalently, step size $$s$$ and offset $$z$$) of a weight tensor $$W$$ is determined, the weight will be **round** to its **nearest** value on the fixed point grid. Rounding to the **nearest** quantized value is such an apparently right operation that we don't think twice about it. However, there is a valid reason why we may consider otherwise. 
+In PTQ, after the quantization range $$[q_\text{min}, q_\text{max}]$$ (or equivalently, step size $$s$$ and offset $$z$$) of a weight tensor $$W$$ is determined, the weight will be **round** to its **nearest** value on the fixed-point grid. Rounding to the **nearest** quantized value is such an apparently right operation that we don't think twice about it. However, there is a valid reason why we may consider otherwise. 
 
-Let us first define a more flexible form of quantization $$\widetilde{W}$$ where we can control to round up or down with a binary auxillary variable $$V$$:
+Let us first define a more flexible form of quantization $$\widetilde{W}$$ where we can control whether to round up or down with a binary auxillary variable $$V$$:
 
 $$
 \begin{align*}
@@ -464,7 +467,7 @@ $$
 \end{align*}
 $$
 
-Note that we changed $$\lfloor\cdot\rceil$$ into $$\lfloor\cdot\rfloor$$ and ignored clamping for notational clarity. Rounding-to-nearest minimizes the mean-square-error (MSE) of the quantized value with its floating point value, i.e., 
+Note that we changed $$\lfloor\cdot\rceil$$ into $$\lfloor\cdot\rfloor$$ and ignored clamping for notational clarity. Rounding-to-nearest minimizes the mean-square-error (MSE) between the quantized values and its floating point values, i.e., 
 
 $$
 \widehat{W} = \min_{V\in [0, 1]^{|V|}} \left\| W - \widetilde{W}(V) \right\|_F^2.
@@ -476,7 +479,7 @@ $$
 \min_{V\in [0, 1]^{|V|}} \left\|f(Wx) - f\left(\widetilde{W}(V)\bar{x}\right)\right\|_F^2.
 $$
 
-The method of determined whether to round up or round down by optimizing the above objective is called Adaptive Rounding or AdaRound proposed by [[Nagel et al. 2020]](#Nagel_et_al_2020). $$\bar{x}$$ is the activation with all previous layers quantized. Note that optimization of the above objective only requires a small amount of representative input data. Please refer to it for details regarding how this integer optimization problem can be solved with relaxation and annealed regularization term that encourage $$V$$ to converge to 0/1. 
+The method of determined whether to round up or round down by optimizing the above objective is called Adaptive Rounding or AdaRound proposed by [[Nagel et al. 2020]](#Nagel_et_al_2020). $$\bar{x}$$ is the activation with all previous layers quantized. Note that optimization of the above objective only requires a small amount of representative input data. Please refer to [[Nagel et al. 2020]](#Nagel_et_al_2020) for details regarding how this integer optimization problem can be solved with relaxation and annealed regularization term that encourage $$V$$ to converge to 0/1. 
 
 Alternatively, one can use straight-through estimator (STE) to directly optimize for the quantized weight, which allows more flexible quantization beyond just rounding up or down. In the table below, we can see that AdaRound outperforms this STE approach, likely due to biased gradient of STE. 
 
@@ -498,7 +501,7 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
 > * It is only a weight quantization technique
 > * It is applied after the range ($$q_\text{min}$$ and $$q_\text{max}$$, or equivalently $$s$$ and $$z$$) is determined. 
 > * When QAT is applied, AdaRound becomes irrelevant. 
-> * AdaRound absorbs bias correction in it optimization objective ($$f(Wx)$$ should be $$f(Wx+b)$$ in the equations above), so whenever AdaRound is applied, bias correction is not needed.
+> * AdaRound absorbs bias correction in it optimization objective (In the equations above, $$f(Wx)$$ should be $$f(Wx+b)$$, but we ignored $$b$$ for notational clarity), so whenever AdaRound is applied, bias correction is no longer needed.
 
 
 ---
@@ -520,26 +523,26 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
 
 **Debug steps**
 
-* Check 32 bit fixed point model matches performance with floating point model or not
-  * A bit-width gives very high precision and should match floating point model
+* Check if 32-bit fixed-point model matches performance with floating-point model or not
+  * bit-width of 32 gives very high precision and should match floating point model
   * If does not match, check correctness of range learning module and quantizer.
 * Identify which one is the major cause of performance degradation: weight quantization or activation quantization
-  * (A) Apply 32 bit quantization for weight and targeted bit-width for activation
-  * (B) Apply 32 bit quantization for activation and targeted bit-width for weight
-  * Once we confirm which one is for problematic, we can further identify which layer(s) are the bottleneck
-    * We can conduct leave-one-out analysis by quantizing all but one certain layer
+  * (A) Use bit-width of 32 for weight quantization and the targeted bit-width for activation quantization
+  * (B) Use bit-width of 32 for activation quantization and the targeted bit-width for weight quantization
+  * Once we identify which one is more problematic, we can further identify which layer(s) are the bottleneck
+    * We can conduct leave-one-out analysis by quantizing all but one layer
     * and/or add-one-only analysis by quantizing only a single layer
 * If weight quantization causes accuracy drop
   * Apply CLE as a preprocessing step before quantization
   * Apply per-channel quantization if it is supported by the target hardware
-  * Apply Adaround if there is a small representative unlabeled dataset available
+  * Apply AdaRound if there is a small representative unlabeled dataset available
   * Apply bias-correction if the dataset if not available, but there is BN, which captures some data statistics
 * If activation quantization causes accuracy drop
   * Apply CLE that also takes activation range into account [[Meller et al. 2019]](#meller_et_al_2019) before quantization
   * Apply different range estimate methods (MSE is recommended, but for logit activation, cross-entropy based method can be applied)
 * Visualize the range/distribution for problematic tensors
-  * Break down the range/distribution per-channel, per-dimension, and/or per-token
-  * Set quantization to larger bit-width if permitted by hardware. E.g., changing certain layers from 8-bit to 16-bit. Having heterogenous bit-width across layer is also often referred to as mixed-precision. 
+  * Break down the range/distribution per-channel, per-dimension, and/or per-token (in sequence models)
+  * Set quantization to a larger bit-width for problematic layers if permitted by hardware. E.g., changing certain layers from 8-bit to 16-bit. Having heterogenous bit-width across different layers is also often referred to as mixed-precision. 
   * Apply QAT
 
 **Final Pipeline may look like the following**
@@ -548,12 +551,12 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
   * Weight only CLE
   * or CLE that takes activation into account as well
 * Add quantizer
-  * Symmetric weight and asymmetric activation 
+  * Symmetric weight quantization and asymmetric activation quantization
 * Range estimate for weight
   * MSE based range estimation is recommended
   * Min/max can also be a good choice if per-channel quantization of weight is used
 * AdaRound or bias-correction
-  * Adjust weight/bias given a fixed range
+  * Adjust quantized weight/bias given a fixed range
 * Range estimate for activation
   * MSE based range estimation is recommended
   * Cross-entropy can also be a good choice if certain layer contains values interpreted as logits
@@ -564,17 +567,17 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
 
 * Preprocessing of model
   * Cross-layer-equalization
-  * Absorb batch normalization into weights and biases of the preceding layer
+  * Absorb BatchNorm into weights and biases of the preceding layer
 * Add quantizer
-  * Symmetric weight and asymmetric activation weight is recommended
-    * Symmetric is preferred for weight to avoid the second term in Equation \eqref{eq:y_i}.
+  * Symmetric weight quantization and asymmetric activation quantization is recommended
+    * Symmetric is preferred for weight because it voids the second term in Equation \eqref{eq:y_i}
   * Per-tensor quantization of weight and activation
-    * Per-channel quantization is preferable if supported by hardware
+    * Per-channel quantization of weight is preferable if supported by hardware
 * Range estimate
   * MSE based range estimation is recommended
   * It serves as initial quantization parameters
-* Learn quantization parameters together with weights and activations
-  * Gradient of quantization parameters can be derived from Equation \eqref{eq:x_hat_re} and are provided in the three subsequent equations.
+* Learn quantization parameters together with neural network parameters
+  * Gradient of quantization parameters can be derived from Equation \eqref{eq:x_hat_re} and are provided in Equation \eqref{eq:d_hatx_dx}, \eqref{eq:d_hatx_ds} and \eqref{eq:d_hatx_dz}.
 
 
 ---
@@ -583,7 +586,7 @@ Alternatively, one can use straight-through estimator (STE) to directly optimize
 
 For **addition** operation and **concatenation** operation, we need to make sure that two activations to be added or concatenated live on the same quantization grid, i.e., we need to tie the quantization parameters to be the same for the two activations.
 
-So far we have covered Conv and MLP type of linear layers with simple activation functions. BatchNorm an be easily folded into the linear layer so we are also clear how it can be handled. These give great coverage for vision related models, but for the quantization of sequence/NLP models that use transformer, we also need to deal with additional non-linear operators such as LayerNorm, softmax, GeLU. [[Kim et al. 2021]](#Kim_et_al_2021) address this challenge by proposing polynomial approximations to these operations that can be carried out easily in fixed point arithmetic. Also see [[Bondarenko et al. 2021]](#bondarenko_et_al_2021) that proposed a per-embedding-group quantization for PTQ that tackles the structured outliers among certain embedding dimensions of sequences.
+So far we have covered Conv and MLP type of linear layers with simple activation functions. BatchNorm an be easily folded into the linear layer so we are also clear how it can be handled. These give great coverage for typical vision models, but for the quantization of sequence/NLP models that use transformer, we also need to deal with additional non-linear operators such as LayerNorm, softmax, GeLU. [[Kim et al. 2021]](#Kim_et_al_2021) addresses this challenge by proposing polynomial approximations to these operations that can be carried out easily in fixed point arithmetic. Also see [[Bondarenko et al. 2021]](#bondarenko_et_al_2021) that proposes a per-embedding-group quantization for PTQ which tackles the structured outliers among certain embedding dimensions of sequences.
 
 ---
 # References
