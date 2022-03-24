@@ -14,7 +14,7 @@ P(\min_{1\leq i \leq n} X_i > x) &= \prod_{1\leq i\leq n} P(X_i>x) = e^{-\sum_{1
 \end{align*}
 $$
 
-A lesser known property is that the arg-min of exponential variables is a multinomial distribution with event probabilities $$\left(\frac{\lambda_1}{\sum_{i}\lambda_i}, \ldots, \frac{\lambda_n}{\sum_{i}\lambda_i}\right)$:
+A lesser known property is that the arg-min of exponential variables is a multinomial distribution with event probabilities $$\left(\frac{\lambda_1}{\sum_{i}\lambda_i}, \ldots, \frac{\lambda_n}{\sum_{i}\lambda_i}\right)$$:
 
 $$
 \begin{align*}
