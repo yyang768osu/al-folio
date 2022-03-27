@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <!-- Head -->
+  <head>        
+    <!-- Metadata, OpenGraph and Schema.org -->
+    
+
+    <!-- Standard metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Yunfei  Huang | Optical Flow -- An Overview</title>
+    <meta name="author" content="Yunfei  Huang" />
+    <meta name="description" content="summary of how optimal flow can be derived" />
+    <meta name="keywords" content="jekyll, jekyll-theme, academic-website, portfolio-website" />
+
+
+    <!-- Bootstrap & MDB -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-DF7Zhf293AJxJNTmh5zhoYYIMs2oXitRfBjY+9L//AY=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous" />
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.1/css/academicons.min.css" integrity="sha256-i1+4qU2G2860dGGIOJscdC30s9beBXjFfzjWLjBRsBg=" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons">
+
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://gitcdn.link/repo/jwarby/jekyll-pygments-themes/master/github.css" />
+
+    <!-- Styles -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
+    <link rel="stylesheet" href="/Yunfei-Huang0.github.io/assets/css/main.css">
+    <link rel="canonical" href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io/blog/2020/optical-flow-an-overview/">
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav">
+
+    <!-- Header -->
+    <header>
+
+      <!-- Nav Bar -->
+      <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top">
+        <div class="container">
+          <a class="navbar-brand title font-weight-lighter" href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io//"><span class="font-weight-bold">Yunfei</span>   Huang</a>
+          <!-- Navbar Toggle -->
+          <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar top-bar"></span>
+            <span class="icon-bar middle-bar"></span>
+            <span class="icon-bar bottom-bar"></span>
+          </button>
+
+          <div class="collapse navbar-collapse text-right" id="navbarNav">
+            <ul class="navbar-nav ml-auto flex-nowrap">
+
+              <!-- About -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/Yunfei-Huang0.github.io/">about</a>
+              </li>
+              
+              <!-- Blog -->
+              <li class="nav-item active">
+                <a class="nav-link" href="/Yunfei-Huang0.github.io/blog/">blog</a>
+              </li>
+
+              <!-- Other pages -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/Yunfei-Huang0.github.io/publications/">publications</a>
+              </li>
+            </ul>
+          </div>
+       </div>
+      </nav>
+
+    <!-- Scrolling Progress Bar -->
+    <div class="progress-container fixed-top">
+      <div class="progress-bar" id="myBar"></div>
+    </div>
+
+    <!-- Reading progress bar -->
+
+    <!-- Javascript for Progress Bar -->
+    <script type="text/javascript">
+      window.onscroll = function() {myFunction()};
+
+      function myFunction() {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = (winScroll / height) * 100;
+        document.getElementById("myBar").style.width = scrolled + "%";
+      }
+    </script>
+      
+    </header>
+
+    <!-- Content -->
+    <div class="container mt-5">
+      <!-- _layouts/post.html -->
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Optical Flow -- An Overview</h1>
+    <p class="post-meta">June 16, 2020</p>
+    <p class="post-tags">
+      <a href="/Yunfei-Huang0.github.io//blog/2020"> <i class="fas fa-calendar fa-sm"></i> 2020 </a>
+
+    </p>
+  </header>
+
+  <article class="post-content">
+    <ul id="markdown-toc">
+  <li><a href="#definition-of-optical-flow" id="markdown-toc-definition-of-optical-flow">Definition of Optical Flow</a></li>
+  <li><a href="#useful-resources" id="markdown-toc-useful-resources">Useful Resources</a></li>
+  <li>
+<a href="#traditional-approach" id="markdown-toc-traditional-approach">Traditional Approach</a>    <ul>
+      <li><a href="#brightness-constancy-assumption" id="markdown-toc-brightness-constancy-assumption">Brightness Constancy Assumption</a></li>
+      <li><a href="#small-motion-assumption" id="markdown-toc-small-motion-assumption">Small Motion Assumption</a></li>
+      <li><a href="#brightness-constancy-equation" id="markdown-toc-brightness-constancy-equation">Brightness Constancy Equation</a></li>
+      <li><a href="#how-to-solve-brightness-constancy-equation" id="markdown-toc-how-to-solve-brightness-constancy-equation">How to solve Brightness Constancy Equation?</a></li>
+      <li><a href="#formulation-of-horn-shunck-optical-flow" id="markdown-toc-formulation-of-horn-shunck-optical-flow">Formulation of Horn-Shunck Optical flow</a></li>
+      <li><a href="#discrete-optical-flow-estimation" id="markdown-toc-discrete-optical-flow-estimation">Discrete Optical Flow Estimation</a></li>
+    </ul>
+  </li>
+  <li>
+<a href="#dataset" id="markdown-toc-dataset">Dataset</a>    <ul>
+      <li><a href="#middlebury-link-paper" id="markdown-toc-middlebury-link-paper">Middlebury (link, paper)</a></li>
+      <li><a href="#mpi-sintel-link-paper" id="markdown-toc-mpi-sintel-link-paper">MPI Sintel (link, paper)</a></li>
+      <li><a href="#kitti-link-paper" id="markdown-toc-kitti-link-paper">KITTI (link, paper)</a></li>
+      <li><a href="#flying-chairs-link-paper" id="markdown-toc-flying-chairs-link-paper">Flying Chairs (link, paper)</a></li>
+      <li><a href="#flying-things-3d-link-paper" id="markdown-toc-flying-things-3d-link-paper">Flying Things 3D (link, paper)</a></li>
+    </ul>
+  </li>
+  <li>
+<a href="#evaluation-metric" id="markdown-toc-evaluation-metric">Evaluation Metric</a>    <ul>
+      <li><a href="#angular-error-ae" id="markdown-toc-angular-error-ae">Angular Error (AE)</a></li>
+      <li><a href="#end-point-error-epe" id="markdown-toc-end-point-error-epe">End Point Error (EPE)</a></li>
+    </ul>
+  </li>
+  <li>
+<a href="#end-to-end-regression-based-optical-flow-estimation" id="markdown-toc-end-to-end-regression-based-optical-flow-estimation">End-to-end regression based optical flow estimation</a>    <ul>
+      <li><a href="#some-useful-concepts" id="markdown-toc-some-useful-concepts">Some useful concepts</a></li>
+      <li><a href="#overview-of-different-models" id="markdown-toc-overview-of-different-models">Overview of different models</a></li>
+      <li><a href="#flownet-iccv-2015-paper" id="markdown-toc-flownet-iccv-2015-paper">FlowNet (ICCV 2015) paper</a></li>
+      <li><a href="#flownet-20-cvpr-2017-paper" id="markdown-toc-flownet-20-cvpr-2017-paper">FlowNet 2.0 (CVPR 2017) paper</a></li>
+      <li><a href="#spynet-cvpr-2017-paper-code" id="markdown-toc-spynet-cvpr-2017-paper-code">SPyNet (CVPR 2017) paper code</a></li>
+      <li><a href="#pwcnet-cvpr-2018-paper-code-video" id="markdown-toc-pwcnet-cvpr-2018-paper-code-video">PWCNet (CVPR 2018) paper code video</a></li>
+      <li><a href="#irr-pwcnet-cvpr-2019-paper" id="markdown-toc-irr-pwcnet-cvpr-2019-paper">IRR-PWCNet (CVPR 2019) paper</a></li>
+      <li><a href="#pwcnet-fusion-wacv-2019-paper" id="markdown-toc-pwcnet-fusion-wacv-2019-paper">PWCNet Fusion (WACV 2019) paper</a></li>
+      <li><a href="#scopeflow-cvpr-2020-paper-code" id="markdown-toc-scopeflow-cvpr-2020-paper-code">ScopeFlow (CVPR 2020) paper code</a></li>
+      <li><a href="#maskflownet-cvpr-2020-paper-code" id="markdown-toc-maskflownet-cvpr-2020-paper-code">MaskFlownet (CVPR 2020) paper code</a></li>
+      <li><a href="#raft-recurrent-all-pairs-field-transforms-for-optical-flow-arxiv-2020-paper-code" id="markdown-toc-raft-recurrent-all-pairs-field-transforms-for-optical-flow-arxiv-2020-paper-code">RAFT: REcurrent All-Pairs Field Transforms for Optical Flow (Arxiv 2020) paper code</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="definition-of-optical-flow">Definition of Optical Flow</h2>
+
+<p>Distribution of apparent velocities of movement of brightness pattern in an image.</p>
+
+<ul>
+  <li>Where do we need it?
+    <ul>
+      <li>Action recognition</li>
+      <li>Motion segmentation</li>
+      <li>Video compression</li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="useful-resources">Useful Resources</h2>
+
+<ul>
+  <li>CMU Computer Vision 16-385
+    <ul>
+      <li><a href="http://www.cs.cmu.edu/~16385/s17/Slides/14.1_Brightness_Constancy.pdf" target="_blank" rel="noopener noreferrer">Brightness Constancy</a></li>
+      <li><a href="http://www.cs.cmu.edu/~16385/s17/Slides/14.2_OF__ConstantFlow.pdf" target="_blank" rel="noopener noreferrer">Optical Flow : Constant Flow</a></li>
+      <li><a href="http://www.cs.cmu.edu/~16385/s15/lectures/Lecture21.pdf" target="_blank" rel="noopener noreferrer">Optical Flow : Lucas-Kanade</a></li>
+      <li><a href="http://www.cs.cmu.edu/~16385/s17/Slides/14.3_OF__HornSchunck.pdf" target="_blank" rel="noopener noreferrer">Optical Flow : Horn-Shunck</a></li>
+    </ul>
+  </li>
+  <li>CMU Computer Vision 16-720
+    <ul>
+      <li><a href="http://16720.courses.cs.cmu.edu/lec/motion_lec12.pdf" target="_blank" rel="noopener noreferrer">Motion and Flow</a></li>
+      <li><a href="http://16720.courses.cs.cmu.edu/lec/flow.pdf" target="_blank" rel="noopener noreferrer">Estimating Optical Flow 1</a></li>
+      <li><a href="http://16720.courses.cs.cmu.edu/lec/flow_lec13.pdf" target="_blank" rel="noopener noreferrer">Estimating Optical Flow 2</a></li>
+    </ul>
+  </li>
+  <li>Papers
+    <ul>
+      <li><a href="https://arxiv.org/abs/1504.06852" target="_blank" rel="noopener noreferrer">FlowNet: Learning Optical Flow with Convolutional Networks (ICCV 2015)</a></li>
+      <li><a href="https://arxiv.org/abs/1612.01925" target="_blank" rel="noopener noreferrer">FlowNet 2.0: Evolution of Optical Flow Estimation with Deep Networks (CVPR 2017)</a></li>
+      <li><a href="https://arxiv.org/abs/1611.00850" target="_blank" rel="noopener noreferrer">Optical Flow Estimation using a Spatial Pyramid Network (CVPR 2017)</a></li>
+      <li><a href="https://arxiv.org/abs/2004.02853" target="_blank" rel="noopener noreferrer">Optical Flow Estimation in the Deep Learning Age (2020/04/06)</a></li>
+      <li><a href="https://arxiv.org/abs/1709.02371" target="_blank" rel="noopener noreferrer">PWC-Net: CNNs for Optical Flow Using Pyramid, Warping, and Cost Volume (CVPR 2018)</a></li>
+      <li><a href="https://arxiv.org/abs/1904.05290" target="_blank" rel="noopener noreferrer">Iterative Residual Refinement for Joint Optical Flow and Occlusion Estimation (CVPR 2019)</a></li>
+      <li><a href="https://arxiv.org/abs/1810.10066" target="_blank" rel="noopener noreferrer">A fusion approach for multi-frame optical flow estimation (WACV 2019)</a></li>
+      <li><a href="https://arxiv.org/abs/2002.10770" target="_blank" rel="noopener noreferrer">ScopeFlow: Dynamic Scene Scoping for Optical Flow (CVPR 2020)</a></li>
+      <li><a href="https://arxiv.org/abs/2003.10955" target="_blank" rel="noopener noreferrer">MaskFlownet: Asymmetric Feature Matching with Learnable Occlusion Mask (CVPR 2020)</a></li>
+      <li><a href="https://arxiv.org/abs/2003.12039" target="_blank" rel="noopener noreferrer">RAFT: REcurrent All-Pairs Field Transforms for Optical Flow (Arxiv 2020)</a></li>
+    </ul>
+  </li>
+</ul>
+
+<h2 id="traditional-approach">Traditional Approach</h2>
+
+<h3 id="brightness-constancy-assumption">Brightness Constancy Assumption</h3>
+
+\[\begin{align*}
+I(x(t), y(t), t) = C
+\end{align*}\]
+
+<h3 id="small-motion-assumption">Small Motion Assumption</h3>
+
+\[\begin{align*}
+&amp;I(x(t+\delta t), y(t+\delta t), t+ \delta t) = I(x(t), y(t), t) + \frac{dI}{dt}\delta t, \text{(higher order term ignored)}\\
+&amp;\text{where }\frac{dI}{dt} = \frac{\partial I}{\partial x}\frac{d x}{d t} + \frac{\partial I}{\partial y}\frac{d y}{d t} + \frac{\partial I}{\partial t}\triangleq I_x u + I_y v + I_t \triangleq \nabla^T I [u, v]^T + I_t
+\end{align*}\]
+
+<p>\(\nabla I = [I_x, I_y]^T\) : spatial derivative</p>
+
+<p>\(I_t\) : temporal derivative</p>
+
+<p>\([u, v]\) : optical flow velocities</p>
+
+<h3 id="brightness-constancy-equation">Brightness Constancy Equation</h3>
+<p>Combining the above two assumptions, we obtain</p>
+
+\[\begin{align*}
+\nabla I [u, v]^T + I_t = 0.
+\end{align*}\]
+
+<h3 id="how-to-solve-brightness-constancy-equation">How to solve Brightness Constancy Equation?</h3>
+<p>Temporal derivative \(I_t\) can be estimated by frame difference; spatial derivative \(\nabla I\) can be estimated using spatial filters. Since there are two unknowns (\(u\) and \(v\)), the system is under-determined.</p>
+
+<p>Two ways to enforce additional constraints:</p>
+
+<ul>
+  <li>Lucas-Kanade Optical Flow (1981) : assuming local patch has constant flow
+    <ul>
+      <li>LS can be applied to solve this overdetermined set of equations</li>
+      <li>If there is lack of spatial gradient in a local path, then the set of equations could still be under-determined. This is referred to as the <code class="language-plaintext highlighter-rouge">aperture</code> problem</li>
+      <li>If applied to only tractable patches, these are called sparse flow</li>
+    </ul>
+  </li>
+  <li>Horn-Schunck Optical Flow (1981) : assuming a smooth flow field</li>
+</ul>
+
+<h3 id="formulation-of-horn-shunck-optical-flow">Formulation of Horn-Shunck Optical flow</h3>
+
+<p>Brightness constancy constraint/loss :</p>
+
+\[\begin{align*}
+E_d(i, j) = \left[I_x(i,j) u(i,j)+I_y(i,j)v(i,j) + I_t(i,j)\right]^2
+\end{align*}\]
+
+<p>Smoothness constraint/loss :</p>
+
+\[\begin{align*}
+E_s(i, j) = \frac{1}{4}\left[(u(i,j)-u(i+1,j))^2, (u(i,j)-u(i,j+1))^2, (v(i,j)-v(i+1,j)^2, (v(i,j)-v(i,j+1))^2\right]
+\end{align*}\]
+
+<p>Solving for optical flow :</p>
+
+\[\begin{align*}
+\text{min}_{\bf{u}, \bf{v}} \sum_{i,j} E_d(i,j) + \lambda E_s(i,j)
+\end{align*}\]
+
+<p>Gradient descent can be used to solve the above optimization problem.</p>
+
+<h3 id="discrete-optical-flow-estimation">Discrete Optical Flow Estimation</h3>
+
+<p>Brightness Constancy Equation assumes small motion, which is in general not the case. If the movement is beyond 1 pixel, then higher order terms in the Taylor expansion of \(I(x(t), y(t), t)\) could dominate. There are two solutions</p>
+<ol>
+  <li>To reduce the resolution using coarse-to-fine architecture</li>
+  <li>Resort to discrete optical flow estimation</li>
+</ol>
+
+<p>For case-2, we obtain optical flow estimate by minimizing the following objective</p>
+
+\[\begin{align*}
+&amp;E({\bf{z}}) = \sum_{i\in\mathcal{I}}D(z_i) + \sum_{(i,j)\in \mathcal{N}}S(z_i, z_j)\\
+&amp;\text{where } z_i\triangleq (u_i, v_j), \mathcal{I}\triangleq\text{set of all pixels }, \mathcal{N}\triangleq\text{set of all neighboring pixels}
+\end{align*}\]
+
+<p>The above can be viewed as energy minimization in a Markov random field.</p>
+
+<h2 id="dataset">Dataset</h2>
+
+<p>Table 1 from <a href="https://arxiv.org/pdf/1504.06852.pdf" target="_blank" rel="noopener noreferrer">FlowNet</a></p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Entry</th>
+      <th>Frame Pairs</th>
+      <th>Frames with ground truth</th>
+      <th>Ground-truth density per frame</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Middlebury</td>
+      <td>72</td>
+      <td>72</td>
+      <td>100%</td>
+    </tr>
+    <tr>
+      <td>KITTI2012</td>
+      <td>194</td>
+      <td>194</td>
+      <td>50%</td>
+    </tr>
+    <tr>
+      <td>MPI Sintel</td>
+      <td>1041</td>
+      <td>1041</td>
+      <td>100%</td>
+    </tr>
+    <tr>
+      <td>Flying Chairs</td>
+      <td>22872</td>
+      <td>22972</td>
+      <td>100%</td>
+    </tr>
+    <tr>
+      <td>Flying Things 3D</td>
+      <td>22872</td>
+      <td>-</td>
+      <td>100%</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3 id="middlebury-link-paper">Middlebury (<a href="http://vision.middlebury.edu/flow/" target="_blank" rel="noopener noreferrer">link</a>, <a href="http://vision.middlebury.edu/flow/floweval-ijcv2011.pdf" target="_blank" rel="noopener noreferrer">paper</a>)</h3>
+<p>Contains only 8 image pairs for training, with ground truth flows generated using four different techniques. Displacements are very small, typically below 10 pixels. (Section 4.1 in <a href="https://arxiv.org/pdf/1504.06852.pdf" target="_blank" rel="noopener noreferrer">FlowNet</a>)</p>
+
+<h3 id="mpi-sintel-link-paper">MPI Sintel (<a href="http://sintel.is.tue.mpg.de" target="_blank" rel="noopener noreferrer">link</a>, <a href="http://files.is.tue.mpg.de/black/papers/ButlerECCV2012-corrected.pdf" target="_blank" rel="noopener noreferrer">paper</a>)</h3>
+
+<p>Computer-animated action movie. There are three render passes with varying degree of realism</p>
+<ul>
+  <li>Albedo render pass</li>
+  <li>Clean pass (adds natural shading, cast shadows, specular reflections, and more complex lighting effects)</li>
+  <li>Final pass (adds motion blur,  focus blur, and atmospherical effect)</li>
+</ul>
+
+<p>Contains 1064 training / 564 withheld test flow fields</p>
+
+<h3 id="kitti-link-paper">KITTI (<a href="http://www.cvlibs.net/datasets/kitti/" target="_blank" rel="noopener noreferrer">link</a>, <a href="http://ww.cvlibs.net/publications/Geiger2013IJRR.pdf" target="_blank" rel="noopener noreferrer">paper</a>)</h3>
+
+<p>Contains 194 training image pairs and includes large displacements, but contains only a very special motion type. The ground truth is obtained from real world scenes by simultaneously recording the scenes with a camera and a 3D laser scanner. This assumes that the scene is rigid and that the motion stems from a moving observer. Moreover, motion of distant objects, such as the sky, cannot be captured, resulting in sparse optical flow ground truth.</p>
+
+<h3 id="flying-chairs-link-paper">Flying Chairs (<a href="https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html" target="_blank" rel="noopener noreferrer">link</a>, <a href="https://arxiv.org/abs/1504.06852" target="_blank" rel="noopener noreferrer">paper</a>)</h3>
+
+<p>Contains about 22k image pairs of chairs superimposed on random background images from Flickr. Random affine transformations are applied to chairs and background to obtain the second image and ground truth flow fields. The dataset contains only planar motions. (Section 3 in <a href="https://arxiv.org/abs/1612.01925" target="_blank" rel="noopener noreferrer">FlowNet 2.0</a>)</p>
+
+<h3 id="flying-things-3d-link-paper">Flying Things 3D (<a href="https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html" target="_blank" rel="noopener noreferrer">link</a>, <a href="https://arxiv.org/pdf/1512.02134.pdf" target="_blank" rel="noopener noreferrer">paper</a>)</h3>
+
+<p>A natural extension of the FlyingChairs dataset, having 22,872 larger 3D scenes with more complex motion patterns.</p>
+
+<h2 id="evaluation-metric">Evaluation Metric</h2>
+
+<h3 id="angular-error-ae">Angular Error (AE)</h3>
+<p>AE between \((u_0, v_0)\) and \((u_1, v_1)\) is the angle in 3D space between \((u_0, v_0, 1.0)\) and \((u_1, v_1, 1.0)\). Error in large flow is penalized less than errors in small flow. (Section 4.1 in <a href="http://vision.middlebury.edu/flow/flowEval-iccv07.pdf" target="_blank" rel="noopener noreferrer">link</a>)</p>
+
+<h3 id="end-point-error-epe">End Point Error (EPE)</h3>
+<p>EPE between \((u_0, v_0)\) and \((u_1, v_1)\) is \(\sqrt{(u_0-u_1)^2 + (v_0-v_1)^2}\) (Euclidean distance).</p>
+
+<p>For Sintel MPI, papers also often reports detailed breakdown of EPE for pixels with different distance to motion boundaries (\(d_{0-10}\), \(d_{10-60}\), \(d_{60-140}\)) and different velocities (\(s_{0-10}\), \(s_{10-40}\), \(s_{40+}\)).</p>
+
+<h2 id="end-to-end-regression-based-optical-flow-estimation">End-to-end regression based optical flow estimation</h2>
+
+<h3 id="some-useful-concepts">Some useful concepts</h3>
+
+<ul>
+  <li>Backward warping</li>
+</ul>
+
+<p>\(I_1(\cdot, \cdot)\triangleq I(\cdot, \cdot, t=1), I_2(\cdot, \cdot)\triangleq I(\cdot, \cdot, t=2)\). Optical flow field \(u, v\) satisfies \(I_1(x, y) = I_2(x+u, y+v)\). In other words, \(u,v\) tells us where each pixel in \(I_1\) is coming from, compared with \(I_2\), and given \(u, v\), we know how to move around (warp) the pixels in \(I_2\) to obtain \(I_1\). Here \(I_1\) is often referred to as the source image and \(I_2\) the target image – flow vector is defined per source image. Specifically, we can define a <code class="language-plaintext highlighter-rouge">warp</code> operation as below</p>
+
+\[\begin{align*}
+&amp;I_{\text{source}} = \texttt{warp}(I_\text{target}, f) \text{ where}\\
+&amp;I_{\text{source}}(x, y) = I_\text{target}(x+u, y+v)
+\end{align*}\]
+
+<ul>
+  <li>Compositivity of backward warping</li>
+</ul>
+
+\[\begin{align*}
+\texttt{warp}(I_\text{target}, f_a+f_b) = \texttt{warp}\left(\texttt{warp}(I_\text{target}, f_a), f_b\right)
+\end{align*}\]
+
+<h3 id="overview-of-different-models">Overview of different models</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Model Name</th>
+      <th>Num of parameters</th>
+      <th>inference speed</th>
+      <th>Training time</th>
+      <th>MPI Sintel final test EPE</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>FlowNetS</td>
+      <td>32M</td>
+      <td>87.72fps</td>
+      <td>4days</td>
+      <td>7.218</td>
+    </tr>
+    <tr>
+      <td>FlowNetC</td>
+      <td>32M</td>
+      <td>46.10fps</td>
+      <td>6days</td>
+      <td>7.883</td>
+    </tr>
+    <tr>
+      <td>FlowNet2.0</td>
+      <td>162M</td>
+      <td>11.79fps</td>
+      <td>14days</td>
+      <td>6.016</td>
+    </tr>
+    <tr>
+      <td>SPyNet</td>
+      <td>1.2M</td>
+      <td>-</td>
+      <td>-</td>
+      <td>8.360</td>
+    </tr>
+    <tr>
+      <td>PWCNet</td>
+      <td>8.7M</td>
+      <td>35.01fps</td>
+      <td>4.8days</td>
+      <td>5.042</td>
+    </tr>
+  </tbody>
+</table>
+
+<p class="notice">The EPE column is taken from Table 2 of <a href="https://arxiv.org/abs/2004.02853" target="_blank" rel="noopener noreferrer">an overview paper</a>. The inference speed (on Pascal Titan X) and training time column is taken from Table 7 of <a href="https://arxiv.org/abs/1709.02371" target="_blank" rel="noopener noreferrer">PWCNet paper</a>.</p>
+
+<h3 id="flownet-iccv-2015-paper">FlowNet (ICCV 2015) <a href="https://arxiv.org/abs/1504.06852" target="_blank" rel="noopener noreferrer">paper</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_encoder-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_encoder-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_encoder-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_encoder.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_decoder-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_decoder-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_decoder-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_decoder.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>The first end-to-end CNN architecture for estimating optical flow. Two variants:</p>
+<ul>
+  <li>FlowNetS
+    <ul>
+      <li>A pair of input images is simply concatenated and then input to the U-shaped network that directly outputs optical flow.</li>
+    </ul>
+  </li>
+  <li>FlowNetC
+    <ul>
+      <li>FlowNetC has a shared encoder for both images, which extracts a feature map for each input image, and a cost volume is constructed by measuring patch-level similarity between the two feature maps with a correlation operation. The result is fed into the subsequent network layers.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Multi-scale training loss is applied. Both models still under-perform energy-based approaches.</p>
+
+<h3 id="flownet-20-cvpr-2017-paper">FlowNet 2.0 (CVPR 2017) <a href="https://arxiv.org/abs/1612.01925" target="_blank" rel="noopener noreferrer">paper</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_2-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_2-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_2-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/FlowNet_2.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>Key ideas:</p>
+<ol>
+  <li>By stacking multiple FlowNet style networks, one can sequentially refine the output from previous network modules.</li>
+  <li>It is helpful to pre-train networks on a less challenging synthetic dataset first and then further train on a more challenging synthetic dataset with 3D motion and photometric effects</li>
+</ol>
+
+<p>End-to-end based approach starts to outperform energy-based ones.</p>
+
+<h3 id="spynet-cvpr-2017-paper-code">SPyNet (CVPR 2017) <a href="https://arxiv.org/abs/1611.00850" target="_blank" rel="noopener noreferrer">paper</a> <a href="https://github.com/anuragranj/spynet" target="_blank" rel="noopener noreferrer">code</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/SPyNet-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/SPyNet-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/SPyNet-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/SPyNet.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>Key idea:</p>
+<ul>
+  <li>Incorporate classic <code class="language-plaintext highlighter-rouge">coarse-to-fine</code> concepts into CNN network and update residual flow over mulitple pyramid levels (5 image pyramid levels are used). Networks at different levels have separate parameters.</li>
+</ul>
+
+<p>Achieves comparable performance to FlowNet with 96% less number of parameters.</p>
+
+<h3 id="pwcnet-cvpr-2018-paper-code-video">PWCNet (CVPR 2018) <a href="https://arxiv.org/abs/1709.02371" target="_blank" rel="noopener noreferrer">paper</a> <a href="https://github.com/NVlabs/PWC-Net" target="_blank" rel="noopener noreferrer">code</a> <a href="https://www.youtube.com/watch?v=vVU8XV0Ac_0" target="_blank" rel="noopener noreferrer">video</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>Key ideas:</p>
+<ol>
+  <li>Learned feature pyramid instead of image pyramid</li>
+  <li>Warping of feature maps</li>
+  <li>Computing a cost volume of learned feature maps (correlation)</li>
+</ol>
+
+<p>Computation steps:</p>
+<ol>
+  <li>Feature pyramid extractor: conv-net with down-sampling</li>
+  <li>Target feature map is warped by up-sampled previous flow estimation</li>
+  <li>Cost volume is computed based on source feature map and warped target feature map</li>
+  <li>Optical flow estimator: a DenseNet type of network that takes (1) source feature map (2) cost volume (3) up-sampled previous optical flow estimate</li>
+  <li>Context network: a dilated convolution network to post process the estimated optical flow</li>
+</ol>
+
+<p>Remarks:</p>
+<ul>
+  <li>Multi-scale training loss</li>
+  <li>Network at each scale estimates the optical flow for that scale, not the residual optical flow (the addition happens implicitly inside the optical flow estimator).</li>
+</ul>
+
+<h3 id="irr-pwcnet-cvpr-2019-paper">IRR-PWCNet (CVPR 2019) <a href="https://arxiv.org/abs/1904.05290" target="_blank" rel="noopener noreferrer">paper</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/IRR_PWCNet-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/IRR_PWCNet-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/IRR_PWCNet-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/IRR_PWCNet.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>Key ideas</p>
+<ul>
+  <li>Take the output from a previous pass through the network as input and iteratively refine it by only using a single network block with shared weights, which allows the network to residually refine the previous estimate.</li>
+  <li>For PWCNet, the decoder module at different pyramid level is achieved using a 1x1 convolution before feeding the source feature map to the optical flow estimator/decoder.</li>
+  <li>Joint occlusion and bidirectional optical flow estimation leads to further performance enhancement.</li>
+</ul>
+
+<h3 id="pwcnet-fusion-wacv-2019-paper">PWCNet Fusion (WACV 2019) <a href="https://arxiv.org/abs/1810.10066" target="_blank" rel="noopener noreferrer">paper</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet_Fusion-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet_Fusion-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet_Fusion-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/PWCNet_Fusion.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>The paper focuses on three-frame optical flow estimation problem: given \(I_{t-1}\), \(I_{t}\), and \(I_{t+1}\), estimate \(f_{t\to t+1}\).</p>
+
+<p>Key ideas:</p>
+<ul>
+  <li>If we are given \(f_{t-1\to t}\) and \(f_{t\to t-1}\), and assume constant velocity of movement, then an estimate of \(f_{t\to t+1}\) can be formed by backward warping \(f_{t-1\to t}\) with \(f_{t\to t-1}\).
+\(\begin{align*}
+&amp;\widehat{f}_{t\to t+1} \triangleq \texttt{warp}(f_{t-1 \to t}, f_{t\to t-1}), \\
+&amp;\widehat{f}_{t\to t+1}(x, y) \triangleq f_{t-1 \to t}\left(x+f_{t\to t-1}(x,y)(x), y+f_{t\to t-1}(x,y)(y)\right)
+\end{align*}\)</li>
+  <li>With three frames available, we can plug-in any two-frame optical flow estimation solution (PWCNet in this case) to obtain \(f_{t-1 \to t}\), \(f_{t\to t+1}\) and \(f_{t \to t-1}\).</li>
+  <li>A fusion network (similar to the one used in the last stage of FlowNet 2.0) can be used to fuse together \(\widehat{f}_{t \to t-1}\triangleq\texttt{warp}(f_{t-1 \to t}, f_{t\to t-1})\) and \(f_{t \to t+1}\).
+    <ul>
+      <li>Note that \(\widehat{f}_{t\to t-1}\) would be identical to \(f_{t\to t+1}\) if (a) velocity is constant (b) three optical flow estimations are correct, and (c) there are no occlusions. Brightness constancy errors of the two flow maps together with the source frame \(I_t\) are fed into the fusion network to provide additional info.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>Why multi-frame may perform better than 2-frame solutions:</p>
+<ul>
+  <li>temporal smoothness leads to additional regularization.</li>
+  <li>longer time sequences may help in ambiguous situations such as occluded regions.</li>
+</ul>
+
+<h3 id="scopeflow-cvpr-2020-paper-code">ScopeFlow (CVPR 2020) <a href="https://arxiv.org/abs/2002.10770" target="_blank" rel="noopener noreferrer">paper</a> <a href="https://github.com/avirambh/ScopeFlow" target="_blank" rel="noopener noreferrer">code</a>
+</h3>
+
+<p>ScopeFlow revisits the following two parts in the conventional end-to-end training pipeline/protocol</p>
+<ul>
+  <li>Data augmentation:
+    <ol>
+      <li>photometric transformations: input image perturbation, such as color and gamma corrections.</li>
+      <li>geometric augmentations: global or relative affine transformation, followed by random horizontal and vertical flipping.</li>
+      <li>cropping</li>
+    </ol>
+  </li>
+  <li>Regularization
+    <ul>
+      <li>weighted decay</li>
+      <li>adding random Gaussian noises</li>
+    </ul>
+  </li>
+</ul>
+
+<p>and advocates</p>
+<ul>
+  <li>use larger scopes (crops and zoom-out) when possible.</li>
+  <li>gradually reduce regularization</li>
+</ul>
+
+<h3 id="maskflownet-cvpr-2020-paper-code">MaskFlownet (CVPR 2020) <a href="https://arxiv.org/abs/2003.10955" target="_blank" rel="noopener noreferrer">paper</a> <a href="https://github.com/microsoft/MaskFlownet" target="_blank" rel="noopener noreferrer">code</a>
+</h3>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/AsymOFMM-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/AsymOFMM-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/AsymOFMM-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/AsymOFMM.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/MaskFlowNetS-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/MaskFlowNetS-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/MaskFlowNetS-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/optical_flow/MaskFlowNetS.png" data-zoomable="">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>Key idea:</p>
+<ul>
+  <li>Incorporates a learnable occlusion mask that filters occluded areas immediately after feature warping without any explicit supervision.</li>
+</ul>
+
+<h3 id="raft-recurrent-all-pairs-field-transforms-for-optical-flow-arxiv-2020-paper-code">RAFT: REcurrent All-Pairs Field Transforms for Optical Flow (Arxiv 2020) <a href="https://arxiv.org/abs/2003.12039" target="_blank" rel="noopener noreferrer">paper</a> <a href="https://github.com/princeton-vl/RAFT" target="_blank" rel="noopener noreferrer">code</a>
+</h3>
+
+
+  </article><div id="disqus_thread"></div>
+    <script type="text/javascript">
+      var disqus_shortname  = 'yyang768osu-github-io';
+      var disqus_identifier = '/blog/2020/optical-flow-an-overview';
+      var disqus_title      = "Optical Flow -- An Overview";
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript" target="_blank" rel="noopener noreferrer">comments powered by Disqus.</a>
+</noscript>
+
+</div>
+
+    </div>
+
+    <!-- Footer -->    
+    <footer class="fixed-bottom">
+      <div class="container mt-0">
+        © Copyright 2022 Yunfei  Huang. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="noopener noreferrer">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" target="_blank" rel="noopener noreferrer">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>.
+Last updated: March 27, 2022.
+      </div>
+    </footer>
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootsrap & MDB scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.2/dist/umd/popper.min.js" integrity="sha256-l/1pMF/+J4TThfgARS6KwWrk/egwuVvhRzfLAMQ6Ds4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js" integrity="sha256-SyTu6CwrfOhaznYZPoolVw2rxoY7lKYKQvqbtqN93HI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+    <!-- Mansory & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script defer src="/Yunfei-Huang0.github.io/assets/js/mansory.js" type="text/javascript"></script>
+    
+  <!-- Medium Zoom JS -->
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="/Yunfei-Huang0.github.io/assets/js/zoom.js"></script><!-- Load Common JS -->
+  <script src="/Yunfei-Huang0.github.io/assets/js/common.js"></script>
+
+    <!-- MathJax -->
+  <script type="text/javascript">
+    window.MathJax = {
+      tex: {
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123722738-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-123722738-1');
+  </script>
+  </body>
+</html>
+

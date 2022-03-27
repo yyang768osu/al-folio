@@ -2,7 +2,7 @@
 <html lang="en">
 
   <!-- Head -->
-  <head><meta http-equiv="refresh" content="3; url=https://yunfei-huang0.github.io/Yunfei-Huang0.github.io//" />        
+  <head>        
     <!-- Metadata, OpenGraph and Schema.org -->
     
 
@@ -10,9 +10,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Yunfei  Huang | Page not found</title>
+    <title>Yunfei  Huang | Gumbel max and Gumbel softmax</title>
     <meta name="author" content="Yunfei  Huang" />
-    <meta name="description" content="Looks like there has been a mistake. Nothing exists here." />
+    <meta name="description" content="sampling of softmax == max of (logit + Gumbel noise)" />
     <meta name="keywords" content="jekyll, jekyll-theme, academic-website, portfolio-website" />
 
 
@@ -31,7 +31,7 @@
     <!-- Styles -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
     <link rel="stylesheet" href="/Yunfei-Huang0.github.io/assets/css/main.css">
-    <link rel="canonical" href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io/404.html">
+    <link rel="canonical" href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io/blog/2018/gumbel-max-and-gumbel-softmax/">
   </head>
 
   <!-- Body -->
@@ -61,7 +61,7 @@
               </li>
               
               <!-- Blog -->
-              <li class="nav-item ">
+              <li class="nav-item active">
                 <a class="nav-link" href="/Yunfei-Huang0.github.io/blog/">blog</a>
               </li>
 
@@ -97,20 +97,113 @@
 
     <!-- Content -->
     <div class="container mt-5">
-      <!-- page.html -->
-        <div class="post">
+      <!-- _layouts/post.html -->
 
-          <header class="post-header">
-            <h1 class="post-title">Page not found</h1>
-            <p class="post-description">Looks like there has been a mistake. Nothing exists here.</p>
-          </header>
+<div class="post">
 
-          <article>
-            <p>You will be redirected to the main page within 3 seconds. If not redirected, please click <a href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io//">here</a>.</p>
+  <header class="post-header">
+    <h1 class="post-title">Gumbel max and Gumbel softmax</h1>
+    <p class="post-meta">November 5, 2018</p>
+    <p class="post-tags">
+      <a href="/Yunfei-Huang0.github.io//blog/2018"> <i class="fas fa-calendar fa-sm"></i> 2018 </a>
 
-          </article>
+    </p>
+  </header>
 
-        </div>
+  <article class="post-content">
+    <p>Before we talk about Gumbel distribution, let’s refresh our knowledge on exponential distribution. It is well-known that the exponential distribution is min-stable: the min of \(n\) I.I.D. exponential random variables  \(X_i\sim \text{Exp}(\lambda_i), i=1,2,\ldots, n\) is also exponentially distributed with decay rate \(\sum_{1\leq i\leq n} \lambda_i\), as can be seen from the equation below.</p>
+
+\[\begin{align*}
+P(\min_{1\leq i \leq n} X_i &gt; x) &amp;= \prod_{1\leq i\leq n} P(X_i&gt;x) = e^{-\sum_{1\leq i\leq n}\lambda_i x}
+\end{align*}\]
+
+<p>A lesser known property is that the arg-min of exponential variables is a multinomial distribution with event probabilities \(\left(\frac{\lambda_1}{\sum_{i}\lambda_i}, \ldots, \frac{\lambda_n}{\sum_{i}\lambda_i}\right)\):</p>
+
+\[\begin{align*}
+&amp;P(\arg\min_{1\leq i\leq n}X_i =k)\\
+=&amp;\int_0^\infty P(\arg\min_{1\leq i\leq n} X_i = x | X_k=x)f(X_k = x)dx\\
+=&amp;\int_0^\infty \prod_{i=1\to n, i\not=k} e^{-\lambda_i x} \lambda_k e^{-\lambda_k x} dx\\
+=&amp;\frac{\lambda_k}{\sum_{i=1\to n} \lambda_i}.
+\end{align*}\]
+
+<p>As we will see shortly, this property directly leads to the Gumbel max trick.</p>
+
+<h2 id="gumbel-max-trick">Gumbel max trick</h2>
+
+<p>Assume that we are given a multinomial (a.k.a. categorical) distribution with unnormalized event probabilities \(\lambda_i, i=1\to n\) (i.e., \(\sum_{i=1}^n\lambda_i\not=1\)), the above property provides us a way to sample from the distribution without the need for normalization:</p>
+<ol>
+  <li>draw \(n\) samples from an exponential distributions with decay rate of \(1\)</li>
+  <li>scale the value of these \(n\) samples with \(1/\lambda_i\) for \(i=1\to n\).</li>
+  <li>take the index of the minimum of the scaled samples</li>
+</ol>
+
+<p>To be more precise, we are utilizing the fact that</p>
+
+\[\begin{align*}
+&amp;\arg\min_{1\leq i\leq n} \left(\frac{1}{\lambda_i}s_i\right) \sim \text{Multinomial}\left(\frac{\lambda_1}{\sum_{i}\lambda_i}, \ldots, \frac{\lambda_n}{\sum_{i}\lambda_i}\right)\\
+&amp;\text{where } s_i\sim \text{Exp}(1), \forall i.
+\end{align*}\]
+
+<p>For the case of soft-max operation, we have direct access to the log of the unnormalized probabilities \(\alpha_i=\log \lambda_i\) (multinomial logit), instead of the unnormalized probabilities itself. In this case, we can modify the above equation as below</p>
+
+\[\begin{align*}
+&amp;\arg\min_{1\leq i\leq n} \left(\frac{1}{e^{\alpha_i}}s_i\right) \sim \text{Multinomial}\left(\frac{e^{\alpha_1}}{\sum_{i}e^{\alpha_i}}, \ldots, \frac{e^{\alpha_n}}{\sum_{i}e^{\alpha_i}}\right)\\
+&amp;\text{where } s_i\sim \text{Exp}(1), \forall i.
+\end{align*}\]
+
+<p>One observation is that the left hand side of the above equation is invariant to any linear transform. The Gumbel-max trick is obtained by taking \(-\log(\cdot)\) operation to the right-hand-side, in which case \(-\log(\text{Exp}(1))\) is a standard Gumbel distribution, leading to the equation below</p>
+
+\[\begin{align*}
+&amp;\arg\max_{1\leq i\leq n} \left(\alpha_i+g_i\right) \sim \text{Multinomial}\left(\frac{e^{\alpha_1}}{\sum_{i}e^{\alpha_i}}, \ldots, \frac{e^{\alpha_n}}{\sum_{i}e^{\alpha_i}}\right)\\
+&amp;\text{where } g_i\sim \text{Gumbel}(\text{location}=0, \text{scale}=1), \forall i.
+\end{align*}\]
+
+<p>This provides us a way to obtain samples directly from the logits without going through the exponentiate-and-normalization step</p>
+
+<ol>
+  <li>draw \(n\) samples from a standard Gumbel distributions with location of \(0\) and scale of \(1\).</li>
+  <li>add the values of the \(n\) samples to the logits.</li>
+  <li>take the index of the minimum of the \(n\) summations.</li>
+</ol>
+
+<p>Essentially, <em>the Gumbel max trick converts the sampling operation from a categorical/multinomial distribution into an argmax operation</em>. The sampling process can be expedited if we pre-calculate and store a stream of Gumbel samples.</p>
+
+<h2 id="gumbel-softmax">Gumbel softmax</h2>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/gumbel/gumbel-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/gumbel/gumbel-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/gumbel/gumbel-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/gumbel/gumbel.png">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+
+  </article><div id="disqus_thread"></div>
+    <script type="text/javascript">
+      var disqus_shortname  = 'yyang768osu-github-io';
+      var disqus_identifier = '/blog/2018/gumbel-max-and-gumbel-softmax';
+      var disqus_title      = "Gumbel max and Gumbel softmax";
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript" target="_blank" rel="noopener noreferrer">comments powered by Disqus.</a>
+</noscript>
+
+</div>
 
     </div>
 

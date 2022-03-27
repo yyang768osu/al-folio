@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <!-- Head -->
+  <head>        
+    <!-- Metadata, OpenGraph and Schema.org -->
+    
+
+    <!-- Standard metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Yunfei  Huang | Understanding conventional HMM-based ASR training</title>
+    <meta name="author" content="Yunfei  Huang" />
+    <meta name="description" content="call me an archeologist" />
+    <meta name="keywords" content="jekyll, jekyll-theme, academic-website, portfolio-website" />
+
+
+    <!-- Bootstrap & MDB -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-DF7Zhf293AJxJNTmh5zhoYYIMs2oXitRfBjY+9L//AY=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous" />
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.1/css/academicons.min.css" integrity="sha256-i1+4qU2G2860dGGIOJscdC30s9beBXjFfzjWLjBRsBg=" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons">
+
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://gitcdn.link/repo/jwarby/jekyll-pygments-themes/master/github.css" />
+
+    <!-- Styles -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
+    <link rel="stylesheet" href="/Yunfei-Huang0.github.io/assets/css/main.css">
+    <link rel="canonical" href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io/blog/2018/understanding-conventional-hmm-based-asr-training/">
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav">
+
+    <!-- Header -->
+    <header>
+
+      <!-- Nav Bar -->
+      <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top">
+        <div class="container">
+          <a class="navbar-brand title font-weight-lighter" href="https://yunfei-huang0.github.io/Yunfei-Huang0.github.io//"><span class="font-weight-bold">Yunfei</span>   Huang</a>
+          <!-- Navbar Toggle -->
+          <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar top-bar"></span>
+            <span class="icon-bar middle-bar"></span>
+            <span class="icon-bar bottom-bar"></span>
+          </button>
+
+          <div class="collapse navbar-collapse text-right" id="navbarNav">
+            <ul class="navbar-nav ml-auto flex-nowrap">
+
+              <!-- About -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/Yunfei-Huang0.github.io/">about</a>
+              </li>
+              
+              <!-- Blog -->
+              <li class="nav-item active">
+                <a class="nav-link" href="/Yunfei-Huang0.github.io/blog/">blog</a>
+              </li>
+
+              <!-- Other pages -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/Yunfei-Huang0.github.io/publications/">publications</a>
+              </li>
+            </ul>
+          </div>
+       </div>
+      </nav>
+
+    <!-- Scrolling Progress Bar -->
+    <div class="progress-container fixed-top">
+      <div class="progress-bar" id="myBar"></div>
+    </div>
+
+    <!-- Reading progress bar -->
+
+    <!-- Javascript for Progress Bar -->
+    <script type="text/javascript">
+      window.onscroll = function() {myFunction()};
+
+      function myFunction() {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = (winScroll / height) * 100;
+        document.getElementById("myBar").style.width = scrolled + "%";
+      }
+    </script>
+      
+    </header>
+
+    <!-- Content -->
+    <div class="container mt-5">
+      <!-- _layouts/post.html -->
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Understanding conventional HMM-based ASR training</h1>
+    <p class="post-meta">November 17, 2018</p>
+    <p class="post-tags">
+      <a href="/Yunfei-Huang0.github.io//blog/2018"> <i class="fas fa-calendar fa-sm"></i> 2018 </a>
+
+    </p>
+  </header>
+
+  <article class="post-content">
+    <p>Conventional HMM-based ASR system assumes a generative model comprised of a language model, a lexicon (e.g., pronunciation dictionary), and an acoustic model, as illustrated below. Here \(\theta\) denotes the parameters to be learned and it comprises of the HMM state transition probabilities and GMM/DNN parameters.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM.png">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<h2 id="maximum-likelihood-training">Maximum likelihood training</h2>
+
+<p>In maximum likelihood estimation (MLE), as stated in the equation below, the objective is to maximize the likelihood of the data being generated by the generative model. In other words, we want to find the value of the parameters \(\theta\) so that the above model best explains the acoustic features (e.g., spectrogram) that we observe.</p>
+
+\[\begin{align*}
+&amp;\arg\max_\theta \prod_{n=1}^N \mathbb{P}\left({\bf x}^{(n)}|{\bf y}^{(n)};\theta\right)\\
+=&amp;\arg\max_\theta \sum_{n=1}^N \log \mathbb{P}\left({\bf x}^{(n)}|{\bf y}^{(n)};\theta\right).
+\end{align*}\]
+
+<p>For ease of notation, for the rest of this section, let’s ignore the conditioning on \({\bf y}^{(n)}\) (or \({\bf p}^{(n)}\)). The difficulty in evaluating the above log-likelihood lies in the need to marginalize over all potential values of \({\bf z}^{(n)}\). This formulation falls right into the discussion of the previous two posts:  <a href="/Yunfei-Huang0.github.io//Yunfei-Huang0.github.io/blog/2018/variational-inference-I-variational-lower-bound/">variational lower bound</a> and <a href="/Yunfei-Huang0.github.io//Yunfei-Huang0.github.io/blog/2018/variational-inference-II-expectation-maximization/">expectation maximization</a>, which provide an iterative algorithm to approach the solution</p>
+
+\[\begin{align}
+\theta^{[i+1]} = \arg\max_{\theta} \sum_{n=1}^N \int \color{red}{\mathbb{P}\left({\bf z}^{(n)}| {\bf x}^{(n)};\theta^{[i]} \right)}\log \mathbb{P}\left({\bf x}^{(n)}, {\bf z}^{(n)};\theta\right)d z^{(n)}.
+\end{align}\]
+
+<p>Most of the computation complexity in the above equation lies in finding the posterior probability of the latent state given the observed \(\color{red}{\mathbb{P}\left({\bf z}^{(n)}\| {\bf x}^{(n)};\theta\right)}\). To elaborate on how the posterior probability is computed, let’s expand the acoustic model part in the previous figure as below, which is essentially a hidden-Markov chain.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM2-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM2-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM2-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/Yunfei-Huang0.github.io/assets/img/blog_img/asr/HMM2.png">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>The inference problem (finding the posterior of the latent given the observed) in a hidden Markov chain can be solved by a forward-backward algorithm. The algorithm manifests itself as BCJR algorithm in convolutional code bit-level MAP decoding and <a href="/Yunfei-Huang0.github.io//Yunfei-Huang0.github.io/blog/2018/kalman-filter-and-particle-filter/">Kalman filtering</a> in linear dynamic system.</p>
+
+\[\begin{align}
+\text{Forward path: }&amp;\text{calculate }\mathbb{P}\left(z_t,{\bf x}_{1\to t};\theta\right)\text{ from }\mathbb{P}\left(z_{t-1},{\bf x}_{1\to t-1};\theta\right) \notag \\
+&amp;\mathbb{P}\left(z_t, {\bf x}_{1\to t};\theta\right) = \sum_{z_{t-1}} \mathbb{P}(z_{t}|z_{t-1};\theta)\mathbb{P}(x_{t}|z_{t};\theta)\mathbb{P}\left(z_{t-1},{\bf x}_{1\to t-1};\theta\right)  \notag \\
+\text{Backward path: }&amp;\text{calculate }\mathbb{P}\left({\bf x}_{t+1\to T}{\big |}z_t;\theta\right)\text{ from }\mathbb{P}\left({\bf x}_{t+2\to T}{\big |}z_{t+1};\theta\right) \notag \\
+&amp;\mathbb{P}\left({\bf x}_{t+1\to T}{\big |}z_t;\theta\right) = \sum_{z_{t+1}} \mathbb{P}(z_{t+1}|z_{t};\theta)\mathbb{P}(x_{t+1}|z_{t+1};\theta)\mathbb{P}\left({\bf x}_{t+2\to T}{\big |}z_{t+1};\theta\right) \notag \\
+\text{Combined: }&amp;\mathbb{P}\left(z_t, {\bf x}_{1\to T};\theta\right) = \mathbb{P}\left(z_t,{\bf x}_{1\to t};\theta\right)\mathbb{P}\left({\bf x}_{t+1\to T}{\big |}z_t;\theta\right) \notag \\
+&amp;\mathbb{P}\left(z_t| {\bf x}_{1\to T};\theta\right) = \mathbb{P}\left(z_t, {\bf x}_{1\to T};\theta\right) / \sum_{z_t}\mathbb{P}\left(z_t, {\bf x}_{1\to T};\theta\right)
+\end{align}\]
+
+<h2 id="circular-dependency-between-segmentation-and-recognition">Circular dependency between segmentation and recognition</h2>
+<p>The expectation-maximization formulation for likelihood maximization reveals a fundamental circular dependency between segmentation and recognition.</p>
+
+<p>Here <strong>segmentation</strong> refers to the alignment of sub-phoneme states of \({\bf y}\) and the acoustic feature observations \({\bf x}\), encoded in the hidden state sequence \({\bf z}\), and <strong>recognition</strong> refers to the classification of sub-phoneme hidden state sequence \({\bf z}\) for the corresponds acoustic feature observations \({\bf x}\).</p>
+
+<p>The two equations below make the circular dependency precise:</p>
+
+\[\begin{align*}
+\theta^{[i]} &amp;
+\underset{\text{ }}{\xrightarrow{\substack{\text{update soft-alignment}\\\text{based on recognition}}}} \mathbb{P}\left({\bf z}^{(n)}| {\bf x}^{(n)};\theta^{[i]} \right)\text{ using Equation (2)}\\
+\mathbb{P}\left({\bf z}^{(n)}| {\bf x}^{(n)};\theta^{[i]} \right) &amp;
+\underset{\text{ }}{\xrightarrow{\substack{\text{update recognition}\\\text{based on soft-alignment}}}}
+\theta^{[i+1]}\text{ using Equation (1)}
+\end{align*}\]
+
+<p>It is easy to argue that to have an accurate alignment, we need accurate recognition, and to train an accurate recognition, we have to rely on accurate alignment/segmentation.</p>
+
+<p>In a convention ASR system, to bootstrap the training procedure, we have to start with a dataset that has human curated phoneme boundary/segmentation. Once the system is capacitated with reasonable recognition/inference, it is no longer confined with human aligned dataset and a much larger dataset can be used with just waveform and the corresponding phoneme transcription. Eventually, after the system is able to deliver robust segmentation, we can make hard decision on the alignment, and only focus on improving the recognition performance with potentially a different system that has a much larger capacity, e.g., a DNN replacing the GMM model.</p>
+
+<h2 id="decoding">Decoding</h2>
+<p>In the decoding stage, we try to find the word/sentence with the maximum a posterior (MAP) probability given the observed data</p>
+
+\[\begin{align*}
+&amp;\arg\max_{\bf y} \mathbb{P}({\bf y}|{\bf x};\theta) \\
+=&amp;\arg\max_{\bf y} \mathbb{P}({\bf x},{\bf y};\theta) / \mathbb{P}({\bf x};\theta)\\
+\color{red}{=}&amp;\arg\max_{\bf y} \mathbb{P}({\bf x},{\bf y};\theta) \\
+=&amp;\arg\max_{\bf y} \underbrace{\mathbb{P}({\bf x}|{\bf p};\theta)}_{\text{acoustic model}}\times\underbrace{\mathbb{P}({\bf p}|{\bf y})}_{\text{lexion}}\times\underbrace{\mathbb{P}({\bf y})}_{\text{language model}}
+\end{align*}\]
+
+<p>The lexicon and language model together construct a state transition diagram, which we unrolled in time to form a decoding trellis. For each transcription hypothesis, a proper MAP decoder would sum across all the paths in the trellis that corresponds to the transcription, which is computationally prohibitive.</p>
+
+<p>One simplification one can make is to find the most probable path by running the Viterbi algorithm. However, even for Viterbi algorithm, the complexity is still too high for practical deployment due to the large state space and potentially large number of time steps.</p>
+
+<p>To further reduce the computation complexity, the conventional system resorts to the beam-search algorithm – basically a breath-first-search algorithm on the trellis that maintain only a limited number of candidates. The beam-search algorithm is often run on a weighted finite state transducer that captures the concatenation of language model and lexicon.</p>
+
+<h2 id="discrepancy-between-mle-training-and-map-decoding">Discrepancy between MLE training and MAP decoding</h2>
+
+<p>At first glance into the MAP decoding equation, it may appear that the MLE based training is well-aligned with the decoding process: maximizing the posterior probability of the transcription \({\bf y}\) given the acoustic feature \({\bf x}\) is equivalent to maximizing the likelihood of the observation \({\bf x}\). The argument being that the probability of the observation \(\mathbb{P}(x;\theta)\) is anyway a constant dictated by the natural of people’s speech, not something we can control. But is it true?</p>
+
+\[\begin{align*}
+&amp;\text{inference time:}\\
+&amp;\arg\max_{\bf y} \mathbb{P}({\bf y}|{\bf x};\theta) \\
+=&amp;\arg\max_{\bf y} \mathbb{P}({\bf x},{\bf y};\theta) / \mathbb{P}({\bf x};\theta)\\
+=&amp;\arg\max_{\bf y} \mathbb{P}({\bf x}|{\bf y};\theta)\mathbb{P}({\bf y})
+\end{align*}\]
+
+<p>It turns out there is a subtle difference between inference time (MAP decoding) and training time (MLE parameter update) that render the above statement wrong.</p>
+
+\[\begin{align*}
+&amp;\text{training time:}\\
+&amp;\arg\max_{\color{red}{\theta}} \mathbb{P}({\bf y}|{\bf x};\theta) \\
+=&amp;\arg\max_{\color{red}{\theta}} \mathbb{P}({\bf x},{\bf y};\theta) / \mathbb{P}({\bf x};\theta)\\
+\color{red}{\not=}&amp;\arg\max_{\color{red}{\theta}} \mathbb{P}({\bf x}|{\bf y};\theta)\mathbb{P}({\bf y})
+\end{align*}\]
+
+<p>As is evident by comparing the above two equations, when we try to update parameter \(\theta\) to maximize directly the posterior probability of the transcription \({\bf y}\) given the acoustic feature \({\bf x}\), we can no longer ignore the term \(\mathbb{P}({\bf x};\theta)\). The key is to realize that we model the speech as a generative model, where <strong>the probability of observing a certain acoustic features \({\bf x}\) is not dictated by the nature, but rather the generative model that we assume</strong>. By updating the parameter \(\theta\) that best increase the likelihood, we inevitably change \(\mathbb{P}({\bf x};\theta)\) too, and thus there is no guarantee that the posterior probability is increased. \(\mathbb{P}({\bf x};\theta)\) is calculated by marginalizing over all potential transcriptions: \(\mathbb{P}({\bf x};\theta)=\sum_{\bf y}\mathbb{P}({\bf x}\|{\bf y};\theta)\).</p>
+
+<p>To elaborate, in MLE, we try to maximize \(\color{red}{\mathbb{P}({\bf y}\|{\bf x};\theta)}\) with respect to \(\theta\), we may very well also increased the likelihood for competing transcription sequences \(\color{blue}{\mathbb{P}({\bf x}\|{\bf \tilde{y}};\theta)}\), potentially resulting in decreased posterior probability \(\mathbb{P}({\bf y}\|{\bf x};\theta)\).</p>
+
+\[\begin{align*}
+&amp;\mathbb{P}({\bf y}|{\bf x};\theta) \\
+=&amp; \mathbb{P}({\bf x},{\bf y};\theta) / \mathbb{P}({\bf x};\theta)\\
+=&amp; \frac{\color{red}{\mathbb{P}({\bf x}|{\bf y};\theta)}\mathbb{P}({\bf y})}{\sum_{\bf \tilde{y}}\color{blue}{\mathbb{P}({\bf x}|{\bf \tilde{y}};\theta)}\mathbb{P}({\bf \tilde{y}})}
+\end{align*}\]
+
+<p>Fundamentally, <strong>the misalignment is rooted from the fact that we are using a generative model for discriminative tasks</strong>. We end here by noting that several sequence discriminative training methods were proposed for better discrimination in the literature.</p>
+
+  </article><div id="disqus_thread"></div>
+    <script type="text/javascript">
+      var disqus_shortname  = 'yyang768osu-github-io';
+      var disqus_identifier = '/blog/2018/understanding-conventional-hmm-based-asr-training';
+      var disqus_title      = "Understanding conventional HMM-based ASR training";
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript" target="_blank" rel="noopener noreferrer">comments powered by Disqus.</a>
+</noscript>
+
+</div>
+
+    </div>
+
+    <!-- Footer -->    
+    <footer class="fixed-bottom">
+      <div class="container mt-0">
+        © Copyright 2022 Yunfei  Huang. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="noopener noreferrer">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" target="_blank" rel="noopener noreferrer">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>.
+Last updated: March 27, 2022.
+      </div>
+    </footer>
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootsrap & MDB scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.2/dist/umd/popper.min.js" integrity="sha256-l/1pMF/+J4TThfgARS6KwWrk/egwuVvhRzfLAMQ6Ds4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js" integrity="sha256-SyTu6CwrfOhaznYZPoolVw2rxoY7lKYKQvqbtqN93HI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+    <!-- Mansory & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script defer src="/Yunfei-Huang0.github.io/assets/js/mansory.js" type="text/javascript"></script>
+    
+  <!-- Medium Zoom JS -->
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="/Yunfei-Huang0.github.io/assets/js/zoom.js"></script><!-- Load Common JS -->
+  <script src="/Yunfei-Huang0.github.io/assets/js/common.js"></script>
+
+    <!-- MathJax -->
+  <script type="text/javascript">
+    window.MathJax = {
+      tex: {
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123722738-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-123722738-1');
+  </script>
+  </body>
+</html>
+
