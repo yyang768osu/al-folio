@@ -6,7 +6,7 @@ subtitle: Deep Learning Researcher/Engineer
 
 profile:
   align: right
-  image: yy.jpg
+  image: yf.jpg
   address: >
 
 news: true  # includes a list of news items
