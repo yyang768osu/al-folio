@@ -7,9 +7,9 @@ description: how to properly quantize neural networks for efficient hardware inf
 ---
 
 
-> This post is a reading note of the paper [A White Paper on Neural Network Quantization](https://arxiv.org/abs/2106.08295) [[Nagel et al. 2021]](#Nagel_et_al_2021) with additional illustrations and explanations that help my understanding (hopefully can help yours too). The same materials can be found in the paper and the references therein. You are highly encouraged to read the paper first and the references if you want to go into depth for certain topics.
+> This post is a reading note of the paper [A White Paper on Neural Network Quantization](https://arxiv.org/abs/2106.08295) [[Nagel et al. 2021]](#Nagel_et_al_2021) with additional illustrations and explanations that help my understanding (hopefully can help yours too). The same material can be found in the paper and the references therein. You are highly encouraged to read the paper first and the references if you want to go into depth for certain topics.
 
-Quantization of neural network model enables fast inference using efficient fixed point operations in typical AI hardware accelerators. Compared with floating point inference, it enables less storage space, smaller memory footprint, lower power consumption, and faster inference speed, all of which are essential for practical edge deployment. It is thus a critical step in the model efficient pipeline. In this post, based off [[Nagel et al. 2021]](#Nagel_et_al_2021), we provide a detailed guide to network quantization.  
+Quantization of neural network model enables fast inference using efficient fixed point operations in typical AI hardware accelerators. Compared with floating point inference, it leads to less storage space, smaller memory footprint, lower power consumption, and faster inference speed, all of which are essential for practical edge deployment. It is thus a critical step in the model efficient pipeline. In this post, based off [[Nagel et al. 2021]](#Nagel_et_al_2021), we provide a detailed guide to network quantization.  
 
 ---
 
