@@ -1,6 +1,6 @@
 ---
 layout: post
-title: A Primer on Neural Network Quantization 
+title: Quantization for Neural Networks 
 date: 2022-03-05
 comments: true
 description: how to properly quantize neural networks for efficient hardware inference?

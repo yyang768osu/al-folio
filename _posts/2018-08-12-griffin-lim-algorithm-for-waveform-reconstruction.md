@@ -10,7 +10,13 @@ Consider a setting where we are given some _modified_ short-time-Fourier-transfo
 
 Let us denote the target STFT as $$Y_w[mS,k]$$, where $$m$$ is the index of the time-window, and $$k$$ represents the frequency axis. Here $$S$$ denote the step size of the time-domain window, and $$mS$$ can be viewed as the center of the sliding time windows. Correspondingly, if we are talking about spectrogram, the target can be denoted as  $$\|Y_w(mS,\omega)\|$$, to emphasis that there is no phase information.
 
-First, let's align the definition and notation of the STFT/spectrogram. For a given time-domain signal $$x[n]$$, it is masked by a finite length window function $$w$$, yielding $$x_w[mS,n]\triangleq w[n-mS]x[n]$$, with $$mS$$ denoting the offset of the window from the original, and $$m$$ being the index of time-domain slice. The STFT $$X_w[mS,k]$$ is obtained by taking the DFT of each windowed signal $$x_w[mS, n]$$ with respect to time-index $$n$$: $$X_w[mS,k]=\text{DFT}(x_w[mS, n])$$.
+First, let's align the definition and notation of the STFT/spectrogram. For a given time-domain signal $$x[n]$$, it is masked by a finite length window function $$w$$, yielding $$x_w[mS,n]\triangleq w[n-mS]x[n]$$, with $$mS$$ denoting the offset of the window from the origin, and $$m$$ being the index of time-domain slice. The STFT $$X_w[mS,k]$$ is obtained by taking the DFT of each windowed signal $$x_w[mS, n]$$ with respect to time-index $$n$$: 
+
+$$
+\begin{align*}
+X_w[mS,k]=\text{DFT}(x_w[mS, n]).
+\end{align*}
+$$
 
 The objective is then to find a time domain signal $$x[n]$$ such that its STFT $$X_w[mS,k]$$ is as close to the target $$Y_w[mS,k]$$ as possible. Note, again, that the target $$Y_w[mS,k]$$ in general does not correspond to any valid time-domain signal. In other words, there is no time-domain signal that produces $$Y_w[mS,k]$$ as its STFT. Going back to the objective, a natural way to define the closeness is simply the sum squared distance, expressed as below
 
