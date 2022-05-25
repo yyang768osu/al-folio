@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <!-- Head -->
+  <head>        
+    <!-- Metadata, OpenGraph and Schema.org -->
+    
+
+    <!-- Standard metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Yang  Yang | A step-by-step guide to variational inference (4): variational auto encoder</title>
+    <meta name="author" content="Yang  Yang" />
+    <meta name="description" content="learned amortized posterior == encoder" />
+    <meta name="keywords" content="jekyll, jekyll-theme, academic-website, portfolio-website" />
+
+
+    <!-- Bootstrap & MDB -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-DF7Zhf293AJxJNTmh5zhoYYIMs2oXitRfBjY+9L//AY=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous" />
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.1/css/academicons.min.css" integrity="sha256-i1+4qU2G2860dGGIOJscdC30s9beBXjFfzjWLjBRsBg=" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons">
+
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://gitcdn.link/repo/jwarby/jekyll-pygments-themes/master/github.css" />
+
+    <!-- Styles -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="canonical" href="https://yyang768osu.github.io/blog/2018/variational-inference-IV-variational-auto-encoder/">
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav">
+
+    <!-- Header -->
+    <header>
+
+      <!-- Nav Bar -->
+      <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top">
+        <div class="container">
+          <a class="navbar-brand title font-weight-lighter" href="https://yyang768osu.github.io/"><span class="font-weight-bold">Yang</span>   Yang</a>
+          <!-- Navbar Toggle -->
+          <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar top-bar"></span>
+            <span class="icon-bar middle-bar"></span>
+            <span class="icon-bar bottom-bar"></span>
+          </button>
+
+          <div class="collapse navbar-collapse text-right" id="navbarNav">
+            <ul class="navbar-nav ml-auto flex-nowrap">
+
+              <!-- About -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/">about</a>
+              </li>
+              
+              <!-- Blog -->
+              <li class="nav-item active">
+                <a class="nav-link" href="/blog/">blog</a>
+              </li>
+
+              <!-- Other pages -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/publications/">publications</a>
+              </li>
+            </ul>
+          </div>
+       </div>
+      </nav>
+
+    <!-- Scrolling Progress Bar -->
+    <div class="progress-container fixed-top">
+      <div class="progress-bar" id="myBar"></div>
+    </div>
+
+    <!-- Reading progress bar -->
+
+    <!-- Javascript for Progress Bar -->
+    <script type="text/javascript">
+      window.onscroll = function() {myFunction()};
+
+      function myFunction() {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = (winScroll / height) * 100;
+        document.getElementById("myBar").style.width = scrolled + "%";
+      }
+    </script>
+      
+    </header>
+
+    <!-- Content -->
+    <div class="container mt-5">
+      <!-- _layouts/post.html -->
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">A step-by-step guide to variational inference (4): variational auto encoder</h1>
+    <p class="post-meta">July 29, 2018</p>
+    <p class="post-tags">
+      <a href="/blog/2018"> <i class="fas fa-calendar fa-sm"></i> 2018 </a>
+
+    </p>
+  </header>
+
+  <article class="post-content">
+    <p>The variational lower bound \(\mathcal{L}\) sits in the core of variational inference. It connects the density estimation problem with the Bayesian inference problem through a variational (free to vary) distribution \(q\), and it converts both problems into an optimization problem. Here let’s briefly revisit the identity associated with variational lower bound</p>
+
+\[\begin{align*}
+\ln p(X;\theta) &amp;= \text{KL}{\big(}q|| p(Z|X;\theta){\big)} + \mathcal{L}(q,\theta)\\
+\text{where }\mathcal{L}(q, \theta) &amp;=\int q(Z) \ln \frac{p(X,Z;\theta)}{q(Z)} dZ
+\end{align*}\]
+
+<p>The identity holds for any arbitrary probability function \(q\). \(\mathcal{L}\) is a lower bound for the data log-likelihood \(\ln p(X;\theta)\) given the non-negativity of the KL divergence. From the identify we can obtain the following two equations</p>
+
+\[\begin{aligned}
+\ln p(X;\theta) &amp;= \max_{q} \mathcal{L}(q,\theta)\\
+p(Z|X;\theta) &amp;= \underset{q}{\arg\max} \mathcal{L}(q,\theta),
+\end{aligned}\]
+
+<p>which testified the claim that both density estimation (LHS of the first equation) and Bayesian inference (LHS of the second equation) are linked with the same optimization function. There are two implications if we increases the value of \(\mathcal{L}\) by tweaking the distribution \(q\): (1) \(\mathcal{L}\) becomes a tighter lower bound of \(\ln p(X;\theta)\), meaning that it is closer to the true data log-likelihood in value (2) the distribution function \(q\) itself is closer to the true posterior distribution measured in KL divergence.</p>
+
+<p>Often, we are also given the task of finding the ML estimate of the parameter \(\theta\) (or MAP estimate of the parameter \(\theta\)), which requires taking the maximum of \(\ln p(X;\theta)\) (or \(\ln p(X\|\theta) + \ln p_\text{prior}(\theta)\) for the MAP case) with respect to \(\theta\), yielding the following problem</p>
+
+\[\begin{align*}
+\max_{\theta}\max_{q}\mathcal{L}(q, \theta).
+\end{align*}\]
+
+<p>By increasing the variation lower bound \(\mathcal{L}\) with respect to \(\theta\), by which the model is parameterized, we are essentially searching for model that can better fit to the data.</p>
+
+<p>It should be clear that is it desirable to maximize \(\mathcal{L}\) with respect to both the variational distribution \(q\) and the generative parameter \(\theta\): maximize it with respect to \(q\) would yield a better inference function; maximize it with respect to \(\theta\) would give us a better model.</p>
+
+<p>Instead of allowing \(q\) to be any function within the probability function space, for analytical tractability, we assume that it is parameterized by \(\phi\) and is a function of the observed data \(x\), denoted as \(q_\phi(x)\). For the generative model, let us modified the notation slightly by assuming that the prior distribution \(p(z)\) is unparameterized, and denote the conditional generative probability as \(p_\theta(x\|z)\), leading to the following expression of the variational lower bound</p>
+
+\[\begin{align*}
+\mathcal{L}(\phi, \theta, x^{(i)}) = \int q_\phi\left(z^{(i)}|x^{(i)}\right)\ln \frac{p_\theta\left(x^{(i)}|z^{(i)}\right)p\left(z^{(i)}\right)}{q_\phi\left(z^{(i)}|x^{(i)}\right)}dz^{(i)}
+\end{align*}\]
+
+<p>Note that we used to express the variational lower bound in terms of the complete observed dataset \(X=\{x^{(1)},\ldots, x^{(N)}\}\) as well as the corresponding latent variables \(Z=\{z^{(1)},\ldots, z^{(N)}\}\). Since each data point and the corresponding latent variables are generated independently, it can be decomposed into the summation of \(N\) terms, one for each data point \(x^{(i)}\) as shown above. Those \(N\) identity equations are linked through global parameter \(\phi\) and \(\theta\).</p>
+
+<p>As discussed before, to obtain a better model and to obtain a closer approximation to the true posterior inference function, one needs to differentiate and optimize \(\sum_{i=1}^N\mathcal{L}(\phi, \theta, x^{(i)})\) with respect to both \(\phi\), the parameter of the inference function, and \(\theta\), the parameter of the model. Here’s a plan: let us calculate the gradient for the lower bound with respect to both parameters, and be done with the problem by applying our favorite stochastic gradient descent algorithm to find a solution. Actually we will show later that such a stochastic training framework is analogous to using an auto-encoder architecture with a specific regularization function.</p>
+
+<p>Soon enough you will realize a major challenge: it is not clear how to differentiate against \(\phi\). There is very little chance for us to expect a close-form expression if we directly differentiate what is inside the integral, as the integral itself is hard even without the differentiation. We will  spend some time here to dig into the issue, which is the key to the understanding of the variational auto-encoding algorithm.</p>
+
+<p>Since the lower-bound exists in the form of the expectation with respect to the variational distribution \(q_\phi\), the work-around here is to seek for Monte-Carlo estimation for the integral with the sampling from distribution \(q_\phi\left(z^{(i)}\|x^{(i)}\right)\). Let us focus on the general problem of \(\nabla_\phi \mathbb{E}\_{q_\phi(z\|x)}\left[f(z)\right]\), for which there are two approaches that use sampling to approximate the expectation:</p>
+
+<p><strong>Approach 1</strong>:</p>
+
+\[\begin{align*}
+&amp;\nabla_\phi \mathbb{E}_{q_\phi(z|x)}\left[f(z)\right] \\
+=&amp;\int \nabla_\phi q_\phi(z|x)  f(z) dz\\
+=&amp;\int q_\phi(z|x) \frac{\nabla_\phi q_\phi(z|x)}{q_\phi(z|x)}  f(z) dz\\
+=&amp; \int q_\phi(z|x)  \nabla_\phi \ln q_\phi(z|x) f(z) dz \\
+=&amp; \mathbb{E}_{q_\phi(z|x)}\left[ \nabla_\phi \ln q_\phi(z|x) f(z)\right] \\
+\text{(Monte Carlo)} \approx &amp;\frac{1}{S}\sum_{s=1}^S \nabla_\phi \ln q_\phi(z^{[s]}|x) f(z^{[s]}) 
+\end{align*}\]
+
+<p><strong>Approach 2</strong>:</p>
+
+<p>This approach makes an additional assumption on \(q_\phi(z\|x)\): assume that we can obtain samples of \(z\) by first sampling through a distribution \(p(\epsilon)\) that is independent of \(\phi\), and then apply a \((\phi,x)\)-dependent transformation of  \(g_\phi(\epsilon, x)\). Effectively we are assuming that the random variable \(\mathcal{Z}\) is a \(\phi-\)dependent function of a \(\phi\)-independent random variable \(\mathcal{E}\): \(\mathcal{Z} = g_\phi(\mathcal{E},x)\). Reflecting this assumption in the differential of expectation, we obtain</p>
+
+\[\begin{align*}
+&amp;\nabla_\phi \mathbb{E}_{q_\phi(z|x)}\left[f(z)\right]\\
+=&amp;\nabla_\phi \int q_\phi(z|x)f(z) dz\\
+\text{(parameter substitution)}=&amp;\nabla_\phi \int p(\epsilon)f(g_\phi(\epsilon, x))d\epsilon\\
+=&amp; \int p(\epsilon) \nabla_\phi f(g_\phi(\epsilon, x))d\epsilon\\
+\text{(Monte Carlo)}\approx&amp; \frac{1}{S}\sum_{s=1}^S  \nabla_\phi f(g_\phi(\epsilon^{[s]},x))
+\end{align*}\]
+
+<p>This seems like a good solution: the Monte Carlo sampling itself is not a function of \(\phi\), and \(\phi\) just appear as the parameter of the transformation function  \(g_\phi\) that maps the samples from \(\mathcal{E}\) to the samples in \(\mathcal{Z}\). In this case \(q_\phi\) is just the induced distribution as a function of the prior distribution of \(\mathcal{E}\) as well as the transformation function \(g_\phi\). This parameter substitution technique is branded as <em>the reparameterization trick</em> in the original paper of variational auto encoder.</p>
+
+<p>To understand the implication of such assumption, let’s ask this question: is it feasible to design the prior distribution of \(\mathcal{E}\) and the transformation function \(g_\phi\) in any arbitrary form? You may wonder why do we even care. Well there is a hidden factor that we need to take care of before claiming victory. Looking at the variational lower bound expression, not only do we need to integrate with respect to the distribution \(q_\phi\), which can be achieved using Monte Carlo by the help of this reparameterization trick, we also need to ensure a closed-form expression of the density function \(q_\phi(z\|x)\) itself, as it lives inside the expectation/integral. This limits the way we can choose the random variable \(\mathcal{E}\) and the function \(g_\phi\).</p>
+
+<p>To investigate on the requirement of \(\mathcal{E}\) and \(g_\phi\) such that the induced random variable \(\mathcal{Z} = g_\phi(\mathcal{E},x)\) has a tractable density/distribution function (easy to evaluate), let’s try to express distribution \(q_\phi\) as a function of \(p_\epsilon\) and \(g_\phi(z,x)\). For any monotonic function \(g_\phi\), the induced distribution \(q_\phi\) <a href="https://en.wikipedia.org/wiki/Random_variable#Functions_of_random_variables" target="_blank" rel="noopener noreferrer">can be derived</a> as</p>
+
+\[\begin{align*}
+q_\phi(z) = p_\epsilon\left(g_\phi^{-1}(z)\right)\left|\frac{\partial g_\phi^{-1}(z)}{\partial z}\right|.
+\end{align*}\]
+
+<p>To enforce a closed form expression for \(q_\phi\), we have two general design choices on \(p_\epsilon\) and \(g_\phi\), as is evident from the expression above: (1) let \(p_\epsilon\) be a uniform distribution on \([0,1]\) and \(g_\phi=\text{CDF}^{-1}\) be the inverse of any distribution with closed-form cumulative distribution function. (2) let \(p_\epsilon\) be any distribution with closed form density and \(g_\phi\) be an easy form of monotonic function, e.g., a linear function.</p>
+
+<p>In the context of variational auto encoder in the original paper, the second design choice is picked: \(p_\epsilon\) is chosen as the standard normal distribution and  \(g_\phi\) is a linear function of \(\epsilon\), whose slope and intercept is an arbitrary function of \(x\) and \(\phi\) characterized using a neural network. In this case the induced distribution \(q_\phi\) is a normal distribution whose mean and variances is determined by a neural network with the input \(x\) and parameter \(\phi\).</p>
+
+<p>Now that we went through what <em>the reparameterization trick</em> is, let us return back to the problem of finding the gradient of \(\mathcal{L}(\phi, \theta, x^{(i)})\) with respect to \(\phi\) and \(\theta\). Applying the reparameterization trick, we obtain the following gradient-friendly Monte Carlo estimate of the variational lower bound</p>
+
+\[\begin{align*}
+\mathcal{L}(\phi, \theta, x^{(i)}) =&amp; \int q_\phi\left(z^{(i)}|x^{(i)}\right)\ln \frac{p_\theta\left(x^{(i)}|z^{(i)}\right)p\left(z^{(i)}\right)}{q_\phi\left(z^{(i)}|x^{(i)}\right)}dz^{(i)}\\
+\text{(Monte Carlo)}\approx&amp;\frac{1}{S}\sum_{s=1}^S \ln  \frac{p_\theta\left(x^{(i)}|z^{(i)[s]}\right)p\left(z^{(i)[s]}\right)}{q_\phi\left(z^{(i)[s]}|x^{(i)}\right)}\\
+\text{(Reparameterization)}=&amp;\frac{1}{S}\sum_{s=1}^S \ln  \frac{p_\theta\left(x^{(i)}|g_\phi (\epsilon^{[s]}, x^{(i)})\right)p\left(g_\phi (\epsilon^{[s]}, x^{(i)})\right)}{q_\phi\left(g_\phi (\epsilon^{[s]}, x^{(i)})|x^{(i)}\right)}\\
+\text{where } \epsilon^{[s]}&amp;\text{ is drawn i.i.d. from }p_\epsilon. 
+\end{align*}\]
+
+<p>Here’s an alternative way to decompose \(\mathcal{L}\) and apply Monte Carlo and reparameterization, for which there is a close form expression for the second term (KL divergence) and only the first part is approximated.</p>
+
+\[\begin{align*}
+\mathcal{L}(\phi, \theta, x^{(i)}) =&amp; \int q_\phi\left(z^{(i)}|x^{(i)}\right)\ln \frac{p_\theta\left(x^{(i)}|z^{(i)}\right)p\left(z^{(i)}\right)}{q_\phi\left(z^{(i)}|x^{(i)}\right)}dz^{(i)}\\
+=&amp;\int q_\phi\left(z^{(i)}|x^{(i)}\right)\ln p_\theta\left(x^{(i)}|z^{(i)}\right) dz^{(i)}-\text{KL}\left( q_\phi\left(z^{(i)}|x^{(i)}\right){\Big|\Big|} p\left(z^{(i)}\right)\right)\\
+\text{(Monte Carlo)}\approx&amp; \frac{1}{S}\sum_{s=1}^S \ln p_\theta\left(x^{(i)}|z^{(i)[s]}\right)  -\text{KL}\left( q_\phi\left(z^{(i)}|x^{(i)}\right){\Big|\Big|} p\left(z^{(i)}\right)\right)\\
+\text{(Reparameterization)}\approx&amp; \frac{1}{S}\sum_{s=1}^S \ln p_\theta\left(x^{(i)}|g_\phi (\epsilon^{[s]}, x^{(i)})\right)  -\text{KL}\left( q_\phi\left(z^{(i)}|x^{(i)}\right){\Big|\Big|} p\left(z^{(i)}\right)\right)
+\end{align*}\]
+
+<p>This decomposition leads to the interpretation of probabilistic auto-encoder, which is named variational auto-encoder as it rooted from the maximization of the variational lower bound.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/assets/img/blog_img/variational_inference/vae-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/assets/img/blog_img/variational_inference/vae-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/assets/img/blog_img/variational_inference/vae-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/assets/img/blog_img/variational_inference/vae.png">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+
+  </article><div id="disqus_thread"></div>
+    <script type="text/javascript">
+      var disqus_shortname  = 'yyang768osu-github-io';
+      var disqus_identifier = '/blog/2018/variational-inference-IV-variational-auto-encoder';
+      var disqus_title      = "A step-by-step guide to variational inference (4): variational auto encoder";
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript" target="_blank" rel="noopener noreferrer">comments powered by Disqus.</a>
+</noscript>
+
+</div>
+
+    </div>
+
+    <!-- Footer -->    
+    <footer class="fixed-bottom">
+      <div class="container mt-0">
+        © Copyright 2022 Yang  Yang. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="noopener noreferrer">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" target="_blank" rel="noopener noreferrer">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>.
+Last updated: May 25, 2022.
+      </div>
+    </footer>
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootsrap & MDB scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.2/dist/umd/popper.min.js" integrity="sha256-l/1pMF/+J4TThfgARS6KwWrk/egwuVvhRzfLAMQ6Ds4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js" integrity="sha256-SyTu6CwrfOhaznYZPoolVw2rxoY7lKYKQvqbtqN93HI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+    <!-- Mansory & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script defer src="/assets/js/mansory.js" type="text/javascript"></script>
+    
+  <!-- Medium Zoom JS -->
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="/assets/js/zoom.js"></script><!-- Load Common JS -->
+  <script src="/assets/js/common.js"></script>
+
+    <!-- MathJax -->
+  <script type="text/javascript">
+    window.MathJax = {
+      tex: {
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123722738-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-123722738-1');
+  </script>
+  </body>
+</html>
+

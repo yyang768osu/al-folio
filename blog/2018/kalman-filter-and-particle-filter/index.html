@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <!-- Head -->
+  <head>        
+    <!-- Metadata, OpenGraph and Schema.org -->
+    
+
+    <!-- Standard metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Yang  Yang | An introduction to Kalman filter and particle filter</title>
+    <meta name="author" content="Yang  Yang" />
+    <meta name="description" content="Kalman filter 101" />
+    <meta name="keywords" content="jekyll, jekyll-theme, academic-website, portfolio-website" />
+
+
+    <!-- Bootstrap & MDB -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-DF7Zhf293AJxJNTmh5zhoYYIMs2oXitRfBjY+9L//AY=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous" />
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.1/css/academicons.min.css" integrity="sha256-i1+4qU2G2860dGGIOJscdC30s9beBXjFfzjWLjBRsBg=" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons">
+
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://gitcdn.link/repo/jwarby/jekyll-pygments-themes/master/github.css" />
+
+    <!-- Styles -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="canonical" href="https://yyang768osu.github.io/blog/2018/kalman-filter-and-particle-filter/">
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav">
+
+    <!-- Header -->
+    <header>
+
+      <!-- Nav Bar -->
+      <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top">
+        <div class="container">
+          <a class="navbar-brand title font-weight-lighter" href="https://yyang768osu.github.io/"><span class="font-weight-bold">Yang</span>   Yang</a>
+          <!-- Navbar Toggle -->
+          <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar top-bar"></span>
+            <span class="icon-bar middle-bar"></span>
+            <span class="icon-bar bottom-bar"></span>
+          </button>
+
+          <div class="collapse navbar-collapse text-right" id="navbarNav">
+            <ul class="navbar-nav ml-auto flex-nowrap">
+
+              <!-- About -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/">about</a>
+              </li>
+              
+              <!-- Blog -->
+              <li class="nav-item active">
+                <a class="nav-link" href="/blog/">blog</a>
+              </li>
+
+              <!-- Other pages -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/publications/">publications</a>
+              </li>
+            </ul>
+          </div>
+       </div>
+      </nav>
+
+    <!-- Scrolling Progress Bar -->
+    <div class="progress-container fixed-top">
+      <div class="progress-bar" id="myBar"></div>
+    </div>
+
+    <!-- Reading progress bar -->
+
+    <!-- Javascript for Progress Bar -->
+    <script type="text/javascript">
+      window.onscroll = function() {myFunction()};
+
+      function myFunction() {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = (winScroll / height) * 100;
+        document.getElementById("myBar").style.width = scrolled + "%";
+      }
+    </script>
+      
+    </header>
+
+    <!-- Content -->
+    <div class="container mt-5">
+      <!-- _layouts/post.html -->
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">An introduction to Kalman filter and particle filter</h1>
+    <p class="post-meta">August 20, 2018</p>
+    <p class="post-tags">
+      <a href="/blog/2018"> <i class="fas fa-calendar fa-sm"></i> 2018 </a>
+
+    </p>
+  </header>
+
+  <article class="post-content">
+    <p>Kalman filter and particle filter are concepts that are intimidating for new learners due to its involved mathmatical discription, and are straightforward once you grasp the main idea and get used to Gaussian distributions. The goal of this post is to take a journey to Kalman filter by dissecting its idea and operation into pieces that are easy to absorb, and then assemble them together to give the whole picture. As a last step, we will see that particle filter achieves the same goal for non-Gaussian system resorting to Monte Carlo sampling.</p>
+
+<p>Below let’s walk through three simple problems and their solutions stemming from Gaussian distributions, and then stitching them together to form the problem that Kalman filter tries to solve and present its solution.</p>
+
+<h2 id="a-conditional-gaussian-distribution">A. Conditional Gaussian distribution</h2>
+
+<p>Here I assume you have a basic knowledge regarding multi-variant Gaussian distribution. A multi-variant Gaussian distribution is captured by its mean vector and covariance matrix, often denoted as \(\mu\) and \(\Sigma\). Below let us consider the bi-variant Gaussian vector \([z,x]^T\), with the following general notation:</p>
+
+\[\begin{align*}
+\left[
+\begin{array}{c}
+z\\
+x
+\end{array}
+\right]
+\sim
+\mathcal{N}
+\left(
+\left[
+\begin{array}{c}
+\mu_z\\
+\mu_x
+\end{array}
+\right],
+\left[\begin{array}{cc}
+\Sigma_z &amp; \Sigma_{zx} \\
+\Sigma_{xz} &amp; \Sigma_{x}
+\end{array}\right]
+\right)\notag
+\end{align*}\]
+
+<p>The covariance matrix is formally defined as</p>
+
+\[\begin{align*}
+\left[\begin{array}{cc}
+\Sigma_z &amp; \Sigma_{zx} \\
+\Sigma_{xz} &amp; \Sigma_{x}
+\end{array}\right]
+=&amp;
+\mathbb{E}\left[
+\left[
+\begin{array}{c}
+z-\mu_z\\
+x-\mu_x
+\end{array}
+\right]
+\left[
+\begin{array}{c}
+z-\mu_z\\
+x-\mu_x
+\end{array}
+\right]^T
+\right]\notag\\
+=&amp;
+\left[
+\begin{array}{cc}
+\mathbb{E}[(z-\mu_z)(z-\mu_z)^T] &amp; \mathbb{E}[(z-\mu_z)(x-\mu_x)^T]\\
+\mathbb{E}[(x-\mu_x)(z-\mu_z)^T] &amp; \mathbb{E}[(x-\mu_x)(x-\mu_x)^T]
+\end{array}
+\right]\notag.
+\end{align*}\]
+
+<p>The off-diagonal term represents the cross covariance between the two random variables \(x\) and \(z\), which, by checking the definition above, satisfies \(\Sigma_{xz}=\Sigma^T_{zx}\). The larger the cross covariance, the more correlated the two random variables are. For correlated random variables, knowing the value of one would help us in guessing the value of the other. Let us take a look at the figure below for a concrete example.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/assets/img/blog_img/kalman_filter/bivariant_normal-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/assets/img/blog_img/kalman_filter/bivariant_normal-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/assets/img/blog_img/kalman_filter/bivariant_normal-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/assets/img/blog_img/kalman_filter/bivariant_normal.png">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>The figure above illustrates the joint distribution of a bivariant Gaussian distribution with \(\mu_z=\mu_x=0\), \(\Sigma_z=\Sigma_x=1\), and \(\Sigma_{zx}=\Sigma_{xz}=0.8\). The marginal distributions of both \(x\) and \(z\) are \(\mathcal{N}(0,1)\). The contour of the distribution forms a thin ellipse, reflecting the strong covariance \(\Sigma_{zx}=\Sigma_{xz}=0.8\) between the two random variables \(x\) and \(z\). To testify the claim that knowing one variable would help us estimating the other,  let us take a look at the the conditional distribution of \(z\) given \(x=1\), and compare it with the marginal distribution of \(z\). As can be seen from the figure above, the distribution of \(z\|x=1\) has much narrow span than \(z\) with a shift in the mean. The reduction of variance of \(z\) after observing \(x=1\) is an evident that the observation of \(x\) narrows down the potential values of \(z\).</p>
+
+<p>An important fact here is that the conditional distribution of a joint-Gaussian distribution is also Gaussian</p>
+
+\[\begin{align*}
+p(z|x) = p(x,z)/p(x)\sim\mathcal{N}\left(\mu_{z|x}, \Sigma_{z|x}\right)\notag.
+\end{align*}\]
+
+<p>Below are two identities on the general expressions of the conditional distribution, here let us accept them as they are without bothering with any proof.</p>
+
+\[\begin{align*}
+\mu_{z|x} &amp;= \mu_z + \Sigma_{zx}\Sigma_{xx}^{-1}(x-\mu_x)\notag\\ 
+\Sigma_{z|x} &amp;= \Sigma_{z} - \Sigma_{zx}\Sigma_x^{-1}\Sigma_{xz} \text{ } \left(\preccurlyeq \Sigma_{z}\right)  \notag
+\end{align*}\]
+
+<p>The above two equations are very important, and lies in the core of many concepts such as MMSE estimator, Wiener filter and of course, Kalman filter. To see that knowing \(x\) would reduce the uncertainty in \(z\), here let’s just point out that the entropy (measure of uncertainty) of a Gaussian random vector is an increasing function of the determinant of the covariance-matrix, and that \(\Sigma_{z\|x}\) always <a href="https://math.stackexchange.com/questions/466158/on-the-difference-of-two-positive-semi-definite-matrices" target="_blank" rel="noopener noreferrer">has a smaller determinant</a> than \(\Sigma_z\) for any non-zero cross covariance \(\Sigma_{zx}\), followed from the second equation with the fact that \(\Sigma_{z}-\Sigma_{z\|x}\) \(=\Sigma_{zx}\Sigma_x^{-1}\Sigma_{xz}\succcurlyeq 0\) is a semi-positive-definite matrix.</p>
+
+<p>These two equations will become useful when we visit part C, and we will come back to them.</p>
+
+<h2 id="b-gaussian-distribution-with-linear-transformation">B. Gaussian distribution with linear transformation</h2>
+
+<p>In the first section we looked at the case of obtaining the conditional distribution from a joint Gaussian distribution, here let’s look at the distribution of a Gaussian vector going through a linear transform. More precisely, let us define a random variable \(z_n\) as obtained from the following transform</p>
+
+\[\begin{align*}
+z_{n-1}&amp;\sim\mathbb{N}(\mu_{n-1}, V_{n-1})\notag\\
+z_n |z_{n-1}&amp;\sim A z_{n-1}+a+\mathcal{N}(0,\Gamma)= \mathbb{N}(Az_{n-1}+a, \Gamma)\notag
+\end{align*}\]
+
+<p>One typical example for the above problem setup is the following: consider the problem of tracking the location and velocity of an object traveling in a strict line. Let us label \(z_n=[\text{loc}\_n, \text{vel}\_n]^T\) as the location-velocity state of the object in time-step \(n\). To model the estimation inaccuracy, assume that \(z_n\) is a random variable with mean \(\mu_{n-1}\) and variance \(V_{n-1}\). Here the mean value reflect the estimated value and the variance can be viewed as capturing the amount of and the structure of the uncertainty in the estimate. The location-velocity estimate in the time-step \(n\) can be modeled by</p>
+
+\[\begin{align*}
+\left[
+\begin{array}{c}
+\text{loc}_{n}\\
+\text{vel}_{n}
+\end{array}
+\right]=
+\underbrace{
+\left[
+\begin{array}{cc}
+1 &amp; 1\notag\\
+0 &amp; 1\notag
+\end{array}
+\right]}_{
+\text{loc}_{n} = \text{loc}_{n-1}+\text{vel}_{n-1}
+}
+\times
+\left[
+\begin{array}{c}
+\text{loc}_{n-1}\\
+\text{vel}_{n-1}
+\end{array}
+\right]
++
+\underbrace{
+\left[
+\begin{array}{c}
+a_\text{loc}\notag\\
+a_\text{vel}\notag
+\end{array}
+\right]}_{\substack{
+\text{external known}\\\text{change}
+}
+}
++
+\underbrace{
+\left[
+\begin{array}{c}
+\text{noise}_\text{loc}\notag\\
+\text{noise}_\text{vel}\notag
+\end{array}
+\right]}_{\substack{
+\text{additional noise}\\\text{in the system}
+}
+}
+\end{align*}\]
+
+<p>with a one-to-one correspondence to the conditional probability \(z_n\|z_{n-1}\) restated above.</p>
+
+<p>The problem of interest here is to characterize the distribution of \(z_n\), given that it is obtained from a linear transformation of a previous estimate with additional Gaussian noise. Precisely, what we want to solve is</p>
+
+\[\begin{align*}
+p(z_n) =&amp; \int p(z_{n}|z_{n-1})p(z_{n-1})dz_{n-1}\notag.
+\end{align*}\]
+
+<p>Here is another important property of Gaussian distribution: any linear transformation of Gaussian variable is still Gaussian. With this property given, we can calculate the mean and variance of the updated state \(z_n\), as shown below, which fully captures its distribution.</p>
+
+\[\begin{align*}
+\mu_{z_n} =&amp;\mathbb{E}[Az_{n-1}+a]= A\mu_{n-1}+a\notag\\
+\Sigma_{z_n} =&amp;\mathbb{E}[(Az_{n-1}-A\mu_{n-1})(Az_{n-1}-A\mu_{n-1})^T]+\Gamma\notag\\
+=&amp; AV_{n-1}A^T + \Gamma\notag,
+\end{align*}\]
+
+<p>which leads to the following solution</p>
+
+\[\begin{align*}
+z_n \sim \mathcal{N}\left(A\mu_{n-1}+a, AV_{n-1}A^T + \Gamma\right).
+\end{align*}\]
+
+<h2 id="c-bayes-theorem-for-gaussian">C. Bayes’ theorem for Gaussian</h2>
+
+<p>In part A, we provide the equation for calculating the conditional distribution from a joint Gaussian distribution, i.e., for a given joint-Gaussian probability \(p(x,z)\), the conditional distribution of \(p(z\|x)\) is also Gaussian and it can be expressed in closed-form.</p>
+
+<p>In this part, we consider a slightly more complex problem, whereby we are given Gaussian distributions \(p(x\|z)\) and \(p(z)\),</p>
+
+\[\begin{align*}
+z&amp;\sim \mathcal{N}(\nu, P),\notag\\
+x|z&amp;\sim \mathcal{N}(Cz+c,\Pi) = Cz+c+\mathcal{N}(0, \Pi),\notag
+\end{align*}\]
+
+<p>and the problem is find the posterior distribution \(p(z\|x)\), which can be expressed using \(p(x\|z)\) and \(p(z)\) by Bayes’ rule:</p>
+
+\[\begin{align*}
+p(z|x) = \frac{p(z)p(x|z)}{p(x)}  \propto p(z)p(x|z).\notag
+\end{align*}\]
+
+<p>Here’s a typical application for this problem: let us consider the task of estimating the temperature and humidity of a room (denoted as vector \(z\)). We are given two sources of information: (1) prior knowledge on the distribution from history data and, e.g., \(p(z)\) (2) the reading from a thermometer with some known accuracy \(p(x\|z)\). Intuitively, a good estimate should be obtained by fusing these two information. Indeed, this is evident from the Bayes’ rule, where the posterior probability of \(z\) given \(x\) is proportional to the product of the two distributions \(p(z)p(x\|z)\).</p>
+
+<p>Since part A taught us how to obtain a conditional distribution from a joint distribution. We can solve this problem by obtaining the joint distribution \(p(z,x)=p(z)p(x\|z)\) first and then plugin the solution presented in part A.</p>
+
+<p>For Gaussian, the multi-variant joint distribution is fully captured by the marginalized mean/variance together with the cross-variance among all factors, which, in our case, can be expressed as</p>
+
+\[\begin{align*}
+\mu_{x} &amp;= \mathbb{E}[Cz+c+\mathcal{N}(0, \Sigma)] = C\nu+c\notag\\
+\Sigma_{x} &amp;= \mathbb{E}[xx^T] = \mathbb{E}[(Cz-C\nu)(Cz-C\nu)^T]+\Sigma=C P C^T + \Pi\notag\\
+\Sigma_{zx} &amp;= \mathbb{E}[z(Cz-C\mu)^T]=P C^T  \notag
+\end{align*}\]
+
+<p>Accordingly, the joint distribution of \(z\) and \(x\) can be written as</p>
+
+\[\begin{align*}
+\left[
+\begin{array}{c}
+z\\
+x
+\end{array}
+\right]
+\sim
+\mathcal{N}
+\left(
+\left[
+\begin{array}{c}
+\nu\\
+C\nu+c
+\end{array}
+\right],
+\left[\begin{array}{cc}
+P &amp;P C^T \\
+CP &amp; C P C^T + \Pi
+\end{array}\right]
+\right)\notag.
+\end{align*}\]
+
+<p>Now, by plugging in the solution in part A, we can obtain below the expression of the mean and variance of the posterior probability \(p(z\|x)\).</p>
+
+\[\begin{align*}
+\mu_{z|x} &amp;= \nu + PC^T (CPC^T+\Pi)^{-1}(x-C\nu-c)\notag\\
+\Sigma_{z|x} &amp;= P - PC^T (CPC^T+\Pi)^{-1}CP\notag 
+\end{align*}\]
+
+<p>To simplify the expression as well as to gain some insights into the expression, it is necessary to group some of the terms in \(K\) below and substitute the corresponding terms.</p>
+
+\[\begin{align*}
+K\triangleq PC^T(CPC^T+\Pi)^{-1},\notag
+\end{align*}\]
+
+<p>resulting in the rewritten form below:</p>
+
+\[\begin{align*}
+\mu_{z|x} &amp;= {\color{red}\nu} + K(x-C\nu-c)\notag\\
+\Sigma_{z|x} &amp;= {\color{red}P}-KCP =(I-KC)P.\notag
+\end{align*}\]
+
+<p>It is interesting to observe that the highlighted term in the expression above is the mean and the variance of the prior distribution \(p(z)\) without taking \(p(x\|z)\) into account. The effect of the \(p(x\|z)\) can be thought of as a correction to the prior distribution: the mean is shifted by \(K(x-Cv-c)\) and the covariance matrix is reduced by \(KCP\) (or shrunk by \((I-KC)\)), leading to a refined posterior distribution \(p(z\|x)\). Here \(K\) can be considered as a <em>gain</em> factor, as it shifts the mean towards that dictated by \(x\) and it shrinks the covariance matrix, leading to a more concentrated distributed with less amount of uncertainty.</p>
+
+<p>Next we will see that Kalman filter is just a repeated (or sequential) application of this Bayes’ rule on Gaussian distribution.</p>
+
+<h2 id="kalman-filter">Kalman filter</h2>
+
+<p>It’s time to assemble what we learnt from the previous parts. Let’s consider following an evolving system, where the system state \(z_n\) follows linear evolving over time, whose true value is hidden from us. Every time instance, we obtain a noisy observation \(x_n\) of the system state. The noisy observation \(x_n\) may not be directly the state itself, but is in general an linear function of the state of interest, with added Gaussian noise. The task is to keep updating the belief on the system state, based on all the noisy observations, and the knowledge on the system evolution itself. In the degenerated case where the system does not evolve, then the problem amount to the sequential application of Bayes’ rule on the same hidden variable to fuse all the instances of noisy observations.</p>
+
+<div class="row mt-3">
+    <div class="col-sm mt-3 mt-md-0">
+        <figure>
+
+  <picture>
+    <source media="(max-width: 480px)" srcset="/assets/img/blog_img/kalman_filter/linear_dynamic_system-480.webp"></source>
+    <source media="(max-width: 800px)" srcset="/assets/img/blog_img/kalman_filter/linear_dynamic_system-800.webp"></source>
+    <source media="(max-width: 1400px)" srcset="/assets/img/blog_img/kalman_filter/linear_dynamic_system-1400.webp"></source>
+    <!-- Fallback to the original file -->
+    <img class="img-fluid rounded z-depth-1" src="/assets/img/blog_img/kalman_filter/linear_dynamic_system.png">
+
+  </picture>
+
+</figure>
+
+    </div>
+</div>
+
+<p>To devise a sequence update rule on the brief of the system state based on all observations \(p(z_n\| x_1^n)\), let us look at the atomic case when \(p(z_{n-1}\|x_1^{n-1})\) — the prior belief of the previous state, and \(p(x_n\|z_n)\) — the noisy observation based on the current state, are given, and the task is to find \(p(z_n\|x_1^{n})\) — the posterior belief of the current state.</p>
+
+<p>In other words, we want to find an iterative procedure that update the belief on the system state, based on linear system evolution and noisy state observation. Precisely, we need to solve the following problem</p>
+
+\[\begin{align*}
+\underset{\substack{\\\mathcal{N}(\mu_{n-1}, V_{n-1})}}{p(z_{n-1}|x_1^{n-1})}
+\underset{\text{ }}{\xrightarrow{\substack{\text{system evolution }\\p(z_n|z_{n-1})}}}  
+\underset{\substack{\\\mathcal{N}(\nu_{n-1}, P_{n-1})}}{p(z_n|x_1^{n-1}) }
+\underset{\text{ }}{\xrightarrow{\substack{\text{noisy observation }\\p(x_n|z_{n})}}}  
+\underset{\substack{\\\mathcal{N}(\mu_{n}, V_{n})}}{p(z_{n}|x_1^{n})}
+\end{align*}\]
+
+<!---
+Here we assume that the noisy observations $$x$$ are independent given the underlying system state $$z$$ (this assumption is actually encoded in the graphic model above), then $$p(z_{n-1}\|x_1^{n-1})$$  captures all the information regarding $$x_1^{n-1}$$, and we can simply drop them from the expression. 
+-->
+
+<p>The decomposed two sub-problem above correspond to part B and part C respectively, for which we can get the following solution</p>
+
+<ul>
+  <li>
+\[p(z_n\|x_1^{n-1}) = \int p(z_n\|z_{n-1}) p(z_{n-1}\|x_1^{n-1})dz_{n-1}\]
+  </li>
+</ul>
+
+\[\begin{align*}
+\text{Input: }&amp;\notag\\
+z_{n-1}|x_1^{n-1}\sim&amp;\mathcal{N}(\mu_{n-1}, V_{n-1})\notag\\
+z_n|z_{n-1} \sim&amp; \mathcal{N}(Az_{n-1}+a, \Gamma)\notag
+\end{align*}\]
+
+\[\begin{align*}
+\text{Solution: }&amp;\notag\\
+z_n|x_1^{n-1}\sim&amp; \mathcal{N}(\nu_{n-1}, P_{n-1})\notag\\
+\nu_{n-1}=&amp;  A\mu_{n-1}+a\notag\\
+P_{n-1}=&amp; AV_{n-1}A^T+\Gamma\notag
+\end{align*}\]
+
+<ul>
+  <li>
+\[p(z_n\|x_1^n)\propto p(x_n\|z_n)p(z_n\|x_1^{n-1})\]
+  </li>
+</ul>
+
+\[\begin{align*}
+\text{Input: }&amp;\notag\\
+z_n|x_1^{n-1}\sim&amp; \mathcal{N}(\nu_{n-1},P_{n-1})\notag\\
+x_n|z_n\sim&amp; \mathcal{N}(Cz_n+c,\Pi)\notag
+\end{align*}\]
+
+\[\begin{align*}
+\text{Solution: }&amp;\notag\\
+z_n|x_1^n \sim&amp;\mathcal{N}(\mu_n, V_n)\notag\\ 
+\mu_n =&amp; \nu_{n-1} + K_n(x_n-C\nu_{n-1}-c)\notag\\
+V_n =&amp; (I-K_nC)P_{n-1}\notag
+\end{align*}\]
+
+\[\begin{align*}
+K_n\triangleq P_{n-1}C^T(CP_{n-1}C^T+\Pi)^{-1}\notag
+\end{align*}\]
+
+<p>The final solution above is the Kalman filter equation, and \(K_n\) is referred to as the Kalman gain.</p>
+
+<h2 id="particle-filter">Particle filter</h2>
+
+<p>One biggest constraint for the application of Kalman filter is that it assumes a linear dynamic system where the state transition and noisy observations are linear processes, which is evident from the probabilistic-graphic-model diagram shown before. The linear assumption is necessary to make sure that all the distributions involved in the system are Gaussian, which is easy to characterize and analytically tractable.</p>
+
+<p>In general cases, seldom do we have a system being linear. Even with a linear system, the distribution may not be Gaussian. The most cited example for the explanation of particle filter is localization. We can fit in the problem of localization as a dynamic system with hidden variables and heterogeneous system evolutions. Here the location of the system at time-step \(n\) is modeled by the hidden variable \(z_n\), and any observations made by accelerometer, GPS, and various other type of sensors are captured in \(x_n\). Since \(z_n\) represent the belief of the system’s location in a map, it can hardly be described by a Gaussian distribution and may not even have a tractable form. On top of that, the observations made by the sensors may not be a linear function of the system location.</p>
+
+<p>In this type of systems, instead of trying to deriving the exact distributions of hidden variables, it is more practical to characterize them using sets of samples. The sample update are achieved by a scheme often referred to as sequential Monte Carlo sampling, which we will introduce next.</p>
+
+<p>Again we emphasis that the problem at hand is the inference of hidden variables in a non-linear dynamic system. The goal is to characterize the posterior probability of the system state \(z_n\) given all previous observations \(x_1^n\triangleq x_1,x_2,\ldots x_n\). Specifically, we want to have an iterative procedure that update the system belief at time-slot \(n\): \(p(z_n\|x_1^n)\) from the belief in the previous time instance \(n-1\) (\(p(z_{n-1}\|x_1^{n-1}\)) by considering both the system evolution \(p(z_n\|z_{n-1)}\) and the updated noisy observations \(p(x_n\|z_n)\).</p>
+
+<p>Drawing similarity to Kalman filter, we can represent the problem as the following:</p>
+
+\[\begin{align*}
+\underset{\substack{\\\text{weighted samples}}}{p(z_{n-1}|x_1^{n-1})}
+\underset{\text{sampling}}{\xrightarrow{\substack{\text{system evolution }\\p(z_n|z_{n-1})}}}  
+\underset{\substack{\\\text{samples}}}{p(z_n|x_1^{n-1}) }
+\underset{\text{importance weighting}}{\xrightarrow{\substack{\text{noisy observation }\\p(x_n|z_{n})}}}  
+\underset{\substack{\\\text{weighted samples}}}{p(z_{n}|x_1^{n})}
+\end{align*}\]
+
+<p>The plan of attack, as suggested by the annotations in the above equation, is to get samples from the potentially intractable probabilities. Let’s start by assuming that we have a set of samples \(\\{\color{red}{z_n^{(s)}}, s=1,\ldots, S\\}\) that represent the distribution of \(p(z_n\|x_1^{n-1})\), and the task is to generate a new set of sample \(\\{\color{blue}{z_{n+1}^{(s)}}, s=1,\ldots, S\\}\) representing the distribution of \(p(z_{n+1}\|x_1^n)\).</p>
+
+\[\begin{align*}
+p(z_n| x_1^n) \propto&amp;\text{ }  p(x_n | z_n) \color{red}{p(z_n | x_1^{n-1})}\notag\\
+\color{blue}{p(z_{n+1}|x_1^n)} =&amp; \int p(z_n| x_1^n) p(z_{n+1}|z_n) dz_n\notag
+\end{align*}\]
+
+<p>Since the evaluation of \(\color{blue}{p(z_{n+1}\|x_1^n)}\) involves taking the expectation, a corresponding sampling approach would be to approximate it using sampling from  \(\color{red}{p(z_n \| x_1^{n-1})}\) together with the technique of importance sampling to bridge the gap between the \(p(z_n\| x_1^n)\) and \(\color{red}{p(z_n \| x_1^{n-1})}\), resulting in the derivation below</p>
+
+\[\begin{align*}
+\color{blue}{p(z_{n+1}|x_1^n)} =&amp; \int p(z_n| x_1^n) p(z_{n+1}|z_n) dz_n\notag\\
+=&amp;\int  \color{red}{p(z_n| x_1^{n-1})} \frac{p(z_n| x_1^n)}{\color{red}{p(z_n| x_1^{n-1})}}  p(z_{n+1}|z_n) dz_n\notag\\
+=&amp; \frac{ \int \color{red}{p(z_n| x_1^{n-1})}   p(x_n|z_n)  p(z_{n+1}|z_n) dz_n}{
+\int \color{red}{p(z_n| x_1^{n-1})}   p(x_n|z_n)   dz_n
+},
+\end{align*}\]
+
+<p>which leads to the following Monte Carlo approximation</p>
+
+\[\begin{align*}
+\color{blue}{p(z_{n+1}|x_1^n)} \approx&amp;\sum_{s=1}^S \frac{p(x_n|z_n^{(s)})}{\sum_{l=1}^S p(x_n|z_n^{(l)})}p(z_{n+1}|z_n^{(s)})\notag\\
+&amp;\sum_{s=1}^S w_n^{(s)}p(z_{n+1}|z_n^{(s)})\notag
+\end{align*}\]
+
+<p>Comparing the above equation with the one before, one can realize that the probability \(p(z_n\|x_1^n)\) is basically represented by a set of weighted samples, where the samples \(z_n^{(s)}\) are drawn from \(\color{red}{p(z_n\|x_1^{n-1})}\) and the weights are defined as \(w_n^{(s)}\triangleq \frac{p(x_n\|z_n^{(s)})}{\sum_{l=1}^S p(x_n\|z_n^{(l)})}\).</p>
+
+<p>Eventually, according to the above equation, to obtain samples \(\color{blue}{\\{x_{n+1}^{(s)}, s=1,\ldots, S\\}}\) from \(\color{blue}{p(z_{n+1}\|x_1^n)}\), one can equivalently draw samples from \(\sum_{s=1}^S w_n^{(s)}p(z_{n+1}\|z_n^{(s)})\), which is itself a weighted sum of \(p(z_{n+1}\|z_n^{(s)})\) for each sample in \(\color{red}{\\{x_{n}^{(s)}, s=1,\ldots, S\\}}\).</p>
+
+<p>With this we complete the derivation of the particle filter. In essence, it can be viewed as the sampling counterpart of Kalman filter, that generalizes to non-linear systems. The sequential Monte Carlo method is also referred to as sampling-importance-resampling in the literature.</p>
+
+<p>To link the math with a specific example, i recommend <a href="https://www.youtube.com/watch?v=aUkBa1zMKv4" target="_blank" rel="noopener noreferrer">this video</a>.</p>
+
+<h2 id="generalization">Generalization</h2>
+
+<p>Both Kalman filter and Particle filter are inference algorithms in hidden Markov models with continuous random variables. Specifically, the formulation we went through corresponds to the forward procedure in HMM inference, and one can generalize it for the backward procedure as well.</p>
+
+<p>The forward-backward algorithm itself is a special realization of belief-propagation or message-passing-algorithm applied in a HMM system, whose probabilistic graphic model is a tree.</p>
+
+<p>The HMM model and the forward-backward procedure has manifestation in different areas:</p>
+<ul>
+  <li>BCJR algorithm in the decoding of convolutional/Turbo code in communication systems</li>
+  <li>Baum-Welch algorithm, commonly used in speech recognition systems with discrete HMM models</li>
+</ul>
+
+
+  </article><div id="disqus_thread"></div>
+    <script type="text/javascript">
+      var disqus_shortname  = 'yyang768osu-github-io';
+      var disqus_identifier = '/blog/2018/kalman-filter-and-particle-filter';
+      var disqus_title      = "An introduction to Kalman filter and particle filter";
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript" target="_blank" rel="noopener noreferrer">comments powered by Disqus.</a>
+</noscript>
+
+</div>
+
+    </div>
+
+    <!-- Footer -->    
+    <footer class="fixed-bottom">
+      <div class="container mt-0">
+        © Copyright 2022 Yang  Yang. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="noopener noreferrer">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" target="_blank" rel="noopener noreferrer">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>.
+Last updated: May 25, 2022.
+      </div>
+    </footer>
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootsrap & MDB scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.2/dist/umd/popper.min.js" integrity="sha256-l/1pMF/+J4TThfgARS6KwWrk/egwuVvhRzfLAMQ6Ds4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js" integrity="sha256-SyTu6CwrfOhaznYZPoolVw2rxoY7lKYKQvqbtqN93HI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+    <!-- Mansory & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script defer src="/assets/js/mansory.js" type="text/javascript"></script>
+    
+  <!-- Medium Zoom JS -->
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="/assets/js/zoom.js"></script><!-- Load Common JS -->
+  <script src="/assets/js/common.js"></script>
+
+    <!-- MathJax -->
+  <script type="text/javascript">
+    window.MathJax = {
+      tex: {
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123722738-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-123722738-1');
+  </script>
+  </body>
+</html>
+

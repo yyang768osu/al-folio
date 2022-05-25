@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <!-- Head -->
+  <head>        
+    <!-- Metadata, OpenGraph and Schema.org -->
+    
+
+    <!-- Standard metadata -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Yang  Yang | Markov Chain Monte Carlo: Gibbs, Metropolis-Hasting, and Hamiltonian</title>
+    <meta name="author" content="Yang  Yang" />
+    <meta name="description" content="a primer on Gibbs sampling, Metropolis-Hasting, and Hamiltonian MC" />
+    <meta name="keywords" content="jekyll, jekyll-theme, academic-website, portfolio-website" />
+
+
+    <!-- Bootstrap & MDB -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha256-DF7Zhf293AJxJNTmh5zhoYYIMs2oXitRfBjY+9L//AY=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/css/mdb.min.css" integrity="sha256-jpjYvU3G3N6nrrBwXJoVEYI/0zw8htfFnhT9ljN3JJw=" crossorigin="anonymous" />
+
+    <!-- Fonts & Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.4/css/all.min.css" integrity="sha256-mUZM63G8m73Mcidfrv5E+Y61y7a12O5mW4ezU3bxqW4=" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/academicons@1.9.1/css/academicons.min.css" integrity="sha256-i1+4qU2G2860dGGIOJscdC30s9beBXjFfzjWLjBRsBg=" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Roboto+Slab:100,300,400,500,700|Material+Icons">
+
+    <!-- Code Syntax Highlighting -->
+    <link rel="stylesheet" href="https://gitcdn.link/repo/jwarby/jekyll-pygments-themes/master/github.css" />
+
+    <!-- Styles -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚓</text></svg>">
+    <link rel="stylesheet" href="/assets/css/main.css">
+    <link rel="canonical" href="https://yyang768osu.github.io/blog/2019/markov-chain-monte-carlo/">
+  </head>
+
+  <!-- Body -->
+  <body class="fixed-top-nav">
+
+    <!-- Header -->
+    <header>
+
+      <!-- Nav Bar -->
+      <nav id="navbar" class="navbar navbar-light navbar-expand-sm fixed-top">
+        <div class="container">
+          <a class="navbar-brand title font-weight-lighter" href="https://yyang768osu.github.io/"><span class="font-weight-bold">Yang</span>   Yang</a>
+          <!-- Navbar Toggle -->
+          <button class="navbar-toggler collapsed ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar top-bar"></span>
+            <span class="icon-bar middle-bar"></span>
+            <span class="icon-bar bottom-bar"></span>
+          </button>
+
+          <div class="collapse navbar-collapse text-right" id="navbarNav">
+            <ul class="navbar-nav ml-auto flex-nowrap">
+
+              <!-- About -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/">about</a>
+              </li>
+              
+              <!-- Blog -->
+              <li class="nav-item active">
+                <a class="nav-link" href="/blog/">blog</a>
+              </li>
+
+              <!-- Other pages -->
+              <li class="nav-item ">
+                <a class="nav-link" href="/publications/">publications</a>
+              </li>
+            </ul>
+          </div>
+       </div>
+      </nav>
+
+    <!-- Scrolling Progress Bar -->
+    <div class="progress-container fixed-top">
+      <div class="progress-bar" id="myBar"></div>
+    </div>
+
+    <!-- Reading progress bar -->
+
+    <!-- Javascript for Progress Bar -->
+    <script type="text/javascript">
+      window.onscroll = function() {myFunction()};
+
+      function myFunction() {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = (winScroll / height) * 100;
+        document.getElementById("myBar").style.width = scrolled + "%";
+      }
+    </script>
+      
+    </header>
+
+    <!-- Content -->
+    <div class="container mt-5">
+      <!-- _layouts/post.html -->
+
+<div class="post">
+
+  <header class="post-header">
+    <h1 class="post-title">Markov Chain Monte Carlo: Gibbs, Metropolis-Hasting, and Hamiltonian</h1>
+    <p class="post-meta">July 6, 2019</p>
+    <p class="post-tags">
+      <a href="/blog/2019"> <i class="fas fa-calendar fa-sm"></i> 2019 </a>
+
+    </p>
+  </header>
+
+  <article class="post-content">
+    <p>A fundamental problem in statistical learning is to compute the expectation with respect to some target probability distribution \(\pi\)</p>
+
+\[\begin{align*}
+\mathbb{E}_\pi\left[f\right] \triangleq \int \pi(x) f(x) dx.
+\end{align*}\]
+
+<p>There are two difficulties in the evaluation of the above (1) often \(\pi(\cdot)\) is available to us only as a form of unnormalized probability, i.e., it can be evaluated only up to a normalizing constant (2) even if \(\pi(\cdot)\) can be evaluated exactly, it is often hard to directly generate samples from it (e.g., for high-dimensional space).</p>
+
+<p>One example application is Bayesian inference, where the posterior probability of the latent \(\pi(x\|D)\) is available only in the form of prior \(\pi(x)\) times likelihood \(\pi(D\|x)\) up to the unknown normalizing constant of \(\pi(D)\), and we would like to either sample or obtain the expectation with respect to the posterior probability.</p>
+
+<p>The idea of Markov Chain Monte Carlo (MCMC) is to construct a Markov chain whose stationary distribution is exactly the target distribution with easy-to-sample transition kernels. One could then start with a random initial state, and yield samples by simply running the transitions and use the generated samples after the chain reaches steady state for the Monte Carlo evaluation of the expectation.</p>
+
+<p>For the design of such Markov chain, all methods that I encountered utilize the following theorem</p>
+<blockquote>
+  <p>An irreducible and aperiodic Markov chain with transition probability \(P\) has stationary distribution of \(\pi\) if it satisfies \begin{align} 
+\pi(x)P(x’|x) = \pi(x’)P(x|x’) \notag
+\end{align}</p>
+</blockquote>
+
+<p>The game, then, is to design \(P\) for which the above equality holds. In this article, we will go through three MCMC methods with different ways in the design of \(P\), namely <strong>Gibbs sampling</strong>, <strong>Metropolis-Hastings</strong>, and <strong>Hamiltonian Monte Carlo</strong> (HMC).</p>
+
+<p>As a side note, it is worth pointing out that the above equation, referred to as <em>detailed balance equation</em>, is a sufficient but not necessary condition for a Markov chain to have stationary distribution \(\pi\). It defines a special case of Markov chain called reversible Markov chain. The detailed balance equation should be contrasted with <em>global balance equation</em> below, which all Markov chains with stationary distribution \(\pi\) satisfy. Then it shouldn’t be surprising that global balance equation can be easily derived from detailed balance equation (by summing over \(x'\) on both sides of the above equation) but not the other way around.</p>
+
+\[\begin{align*}
+\pi(x) = \sum_{x'} \pi(x')P(x'|x).
+\end{align*}\]
+
+<h2 id="gibbs-sampling">Gibbs sampling</h2>
+
+<p>In Gibbs sampling, the transition probability \(P\) is defined as the following</p>
+
+\[\begin{align*}
+P\left(x'|x\right)=\left\{
+\begin{array}{ll}
+\frac{1}{d}\pi\left(x'_j|x_1, \ldots, x_{j-1}, x_{j+1}, \ldots, x_d\right) &amp; \text{if there exits }j\text{ such that }x_i'=x_i\text{ for }i\not=j.\\
+0&amp;\text{otherwise.}
+\end{array}
+\right.
+\end{align*}\]
+
+<p>The state \(x\) is a vector of dimension \(d\), and the transition probability from state \(x\) to state \(x'\) is non-zero when they differ by only one dimension, say dimension \(j\), and the transition probability is designed to be the conditional probability of \(x'_j\), given all the other dimensions fixed, scaled by \(1/d\). This corresponds to a transition scheme where we uniformly pick a dimension \(j\), and then randomly sample a value in dimension \(j\) following the conditional distribution. Detailed balance equation holds with such design</p>
+
+\[\begin{align*}
+&amp;\pi(x)P(x'|x)\\
+=&amp;\frac{1}{d}\pi(x)\pi(x'_j|x_1, \ldots, x_{j-1}, x_{j+1}, \ldots, x_d)\\
+=&amp; \frac{1}{d}\pi(x)\pi(x')/\sum_{z}\pi(x_1, \ldots, x_{j-1}, z, x_{j+1}, \ldots, x_d)\\
+=&amp;\frac{1}{d}\pi(x)\pi(x')/\sum_{z}\pi(x'_1, \ldots, x'_{j-1}, z, x'_{j+1}, \ldots, x'_d)\\
+=&amp;\frac{1}{d}\pi(x')\pi(x_j|x'_1, \ldots, x'_{j-1}, x'_{j+1}, \ldots, x'_d)\\
+=&amp;\pi(x')P(x|x').
+\end{align*}\]
+
+<p>The premise of Gibbs sampling is that the conditional distribution of one dimension given the rest is much easier to normalize and sample from. It is quite limited though, in the sense that the transition can never go very far in each step – only one dimension can be changed at a time. As a consequence, the transition matrix is quite sparse and the Markov chain may suffer from very large mixing time (time to stationary distribution) and it may not scale well with large dimensional space.</p>
+
+<h2 id="metropolis-hastings">Metropolis Hastings</h2>
+
+<p>Metropolis Hastings algorithm is a much more general version of Gibbs; in fact it encompasses both Gibbs sampling and Hamiltonian MC as special realizations. The basic idea is to construct the transition distribution from a flexible form of proposal distribution \(g(x'\|x)\), corrected by a <em>acceptance ratio</em> term \(A(x',x)\)  to guarantee reversibility in time. Specifically, the acceptance ratio is chosen to enforce the detailed balance equation</p>
+
+\[\begin{align*}
+\pi(x) g(x'|x) A(x', x) = \pi(x') g(x|x') A(x, x').
+\end{align*}\]
+
+<p>The actual transition probability is then \(P(x'\|x) \triangleq g(x'\|x) A(x', x)\), corresponding to a sampling scheme where we first sample from \(g(x'\|x)\) to have a candidate next state \(x'\), and then accept this candidate with probability \(A(x', x)\). If the candidate state is rejected, the next state will remain the same as the current state. For an arbitrary proposal distribution \(g\), from the above equation, we have</p>
+
+\[\begin{align*}
+\frac{A(x', x)}{A(x, x')} = \frac{\pi(x')g(x|x')}{\pi(x)g(x'|x)}.
+\end{align*}\]
+
+<p>To reduce the mixing time of the Markov chain, it is desirable to maximize the acceptance ratio \(A\). This means that we want to set either \(A(x',x)\) or \(A(x, x')\) to be \(1\) for any pair of \(x\) and \(x'\), resulting in the expression below</p>
+
+\[\begin{align*}
+A(x', x) = \min\left\{1, \frac{\pi(x')g(x|x')}{\pi(x)g(x'|x)}\right\}.
+\end{align*}\]
+
+<p>In the above equation, since \(\pi\) appear in both numerator and denominator, we can easily work with unnormalized probability distribution, as long as it can be evaluated efficiently for each data point.</p>
+
+<p>Metropolis-Hasting algorithm itself is just a MCMC framework; it still relies on a good choice of proposal distribution to perform well. The design of \(g\) can be problem specific and is the <em>art</em>. The clear optimal choice of is \(g(x'\|x)=\pi(x)\), which degenerates to the direct sampling of \(\pi\) with acceptance ratio of \(1\).</p>
+
+<h2 id="hamiltonian-monte-carlo">Hamiltonian Monte Carlo</h2>
+
+<p>Let’s now image a high dimensional surface for which the potential energy at each point \(x\) is defined as \(V(x)\triangleq -\log\pi(x)\). Here we introduce an auxiliary variable \(p\) with the same dimension as \(x\), and interpret the pair of variable \((x, p)\) as describing the position and momentum of an object on the high dimensional space.</p>
+
+<p>The kinetic energy of the object with mass \(m\) and momentum \(p\) is known as \(K(p)=\frac{p^2}{2m}\) (e.g., \(\frac{1}{2}mv^2 = (mv)^2/2m\)). We now construct a joint probability distribution of \((x,p)\) as</p>
+
+\[\begin{align*}
+\pi(x, p) = \frac{1}{Z}e^{-V(x)-K(p)} = \frac{1}{Z} e^{\log\pi(x)}e^{p^2/2m} = \frac{1}{Z}\pi(x)\mathcal{N}\left(p|0, \sqrt{m}\right).
+\end{align*}\]
+
+<p>Two remarks here: (1) The joint probability defined above is a function of the total energy \(V(x) + K(p)\) (potential energy plus kinetic energy) of the imaginary object. (2) Since the marginal distribution of \(\pi(x, p)\) with respect to \(x\) is \(\pi(x)\), if we can construct an effective MCMC algorithm for \((x, p)\), we then obtain an MCMC algorithm for \(x\) by discarding \(p\).</p>
+
+<p>The key in Hamiltonian MC is to use Hamiltonian mechanism as a way to obtain new candidate state (corresponding to proposal \(g\) in Metropolis-Hastings).  Hamiltonian mechanics is an alternative reformation of the classic Newtonian mechanics describing Newton’s second law of motion. It characterizes the time evolution of the system in terms of location \(x\) and momentum \(p\), with the conservation of the sum of potential energy \(V(x)\) and Kinetic energy of \(K(p)\), a.k.a. Hamiltonian \(\mathcal{H}(x, p) \triangleq V(x) + K(p)\), through the following differential equations</p>
+
+\[\begin{align*}
+\frac{d p}{dt} =&amp; -\frac{\partial \mathcal{H}}{\partial x} &amp;\text{force equals to negative gradient of potential energy}\\
+\frac{d x}{dt} =&amp; \frac{\partial \mathcal{H}}{\partial p} &amp;\text{velocity equals to derivative of kinetic energy w.r.t. momentum}
+\end{align*}\]
+
+<p>By solving the path of \((x, p)\) according to Hamiltonian mechanics, we are essentially traversing along the contour for which \(\pi (x, p)\) is fixed. This provide a very nice way of coming up with a proposal function \(g(x', p'\| x, p)\) without having to reject any candidate. In other words, if we start with the point \((x, p)\) and derive the system state \((x_\tau, p_\tau)\) after a period of time \(\tau\) , we then know that \(\pi(x, p) = \pi(x_\tau, p_\tau)\). If we further apply a negation in the momentum, then the proposal function is reversible.</p>
+
+\[\begin{align*}
+x, p \xrightarrow[]{\substack{\text{Hamiltonian}\\\text{mechanics}}} x_\tau, p_\tau \xrightarrow[]{\substack{\text{negate}\\\text{momentum}}} x_\tau, -p_\tau  = x', p'\\
+x', p' \xrightarrow[]{\substack{\text{Hamiltonian}\\\text{mechanics}}} x'_\tau, p'_\tau \xrightarrow[]{\substack{\text{negate}\\\text{momentum}}}x'_\tau, -p'_\tau  = x, p
+\end{align*}\]
+
+<p>If we have perfect solver for the differential equation, then according to Equation (2) there is no need to reject any transition proposal. However, in reality the differential equation can only be solved in approximation with error, and thus \(\pi(x, p)\not=\pi(x', p')\), meaning that the acceptance ratio is not strictly \(1\) and certain fraction of the transition proposal would be rejected. It is worth noting that the method for computing the solution to the differential equation should still be reversible to respect the detailed balance equation. One hidden condition for such transition to be feasible is that the potential energy \(V(\cdot)\) has to be differentiable, implying that the target distribution \(\pi(\cdot)\) should be differentiable.</p>
+
+<p>So now we have defined a proposal function according to Hamiltonian mechanics, which leads to large acceptance ratio. Are we done here? Not yet. If we stop here, then the Markov chain we defined is reducible, i.e., not every state is accessible from an initial state. In fact, we only have pairwise transition in the Markov chain. To ensure the sampling of the entire space, another proposal distribution \(g_2\) is introduced, taking advantage of the fact that \(\pi(x, p)\) has factorized form for which \(p\) follows a zero-mean normal distribution – the proposal distribution \(g_2\) simply samples the momentum value \(p\) from the corresponding marginal distribution. For such proposal, the corresponding acceptance ratio is \(1\)</p>
+
+\[\begin{align*}
+A((x, p'), (x, p)) = \min\left\{1, \frac{\pi(x, p')g_2(p|p')}{\pi(x, p)g_2(p'|p)}\right\} = \min\left\{1, \frac{\pi(x)}{\pi(x)}\right\}=1 .
+\end{align*}\]
+
+<p>Now we concatenate the above two proposals to have the final form of Hamiltonian MC sampling</p>
+
+\[\begin{align*}
+x, p_0 \xrightarrow[]{\substack{\text{resample}\\\text{momentum}}} x, p 
+\xrightarrow[]{\substack{\text{Hamiltonian}\\\text{mechanics}}} x_\tau, p_\tau 
+\xrightarrow[]{\substack{\text{negate}\\\text{momentum}}} x_\tau, -p_\tau  = x', p'.
+\end{align*}\]
+
+<p>Since every time after applying the Hamiltonian mechanics the momentum is resampled, we can ignore the momentum negation operation, leading to the following</p>
+
+\[\begin{align*}
+x \xrightarrow[]{\substack{\text{resample}\\\text{momentum}}} x, p 
+\xrightarrow[]{\substack{\text{Hamiltonian}\\\text{mechanics}}} x_\tau, p_\tau 
+\xrightarrow[]{\substack{\text{discard}\\\text{momentum}}} x_\tau = x',
+\end{align*}\]
+
+<p>and the corresponding acceptance ratio is</p>
+
+\[\begin{align*}
+A((x_\tau, p_\tau), (x, p)) = \min\left\{1, \frac{\pi(x_\tau, p_\tau)}{\pi(x, p)}\right\} =  \min\left\{1, e^{\mathcal{H}(x, p) - \mathcal{H}(x_\tau, p_\tau)}\right\}.
+\end{align*}\]
+
+
+  </article><div id="disqus_thread"></div>
+    <script type="text/javascript">
+      var disqus_shortname  = 'yyang768osu-github-io';
+      var disqus_identifier = '/blog/2019/markov-chain-monte-carlo';
+      var disqus_title      = "Markov Chain Monte Carlo: Gibbs, Metropolis-Hasting, and Hamiltonian";
+      (function() {
+        var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+        dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+        (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+      })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript" target="_blank" rel="noopener noreferrer">comments powered by Disqus.</a>
+</noscript>
+
+</div>
+
+    </div>
+
+    <!-- Footer -->    
+    <footer class="fixed-bottom">
+      <div class="container mt-0">
+        © Copyright 2022 Yang  Yang. Powered by <a href="https://jekyllrb.com/" target="_blank" rel="noopener noreferrer">Jekyll</a> with <a href="https://github.com/alshedivat/al-folio" target="_blank" rel="noopener noreferrer">al-folio</a> theme. Hosted by <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer">GitHub Pages</a>.
+Last updated: May 25, 2022.
+      </div>
+    </footer>
+
+    <!-- JavaScripts -->
+    <!-- jQuery -->
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+
+    <!-- Bootsrap & MDB scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.2/dist/umd/popper.min.js" integrity="sha256-l/1pMF/+J4TThfgARS6KwWrk/egwuVvhRzfLAMQ6Ds4=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.1/dist/js/bootstrap.min.js" integrity="sha256-SyTu6CwrfOhaznYZPoolVw2rxoY7lKYKQvqbtqN93HI=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mdbootstrap@4.20.0/js/mdb.min.js" integrity="sha256-NdbiivsvWt7VYCt6hYNT3h/th9vSTL4EDWeGs5SN3DA=" crossorigin="anonymous"></script>
+
+    <!-- Mansory & imagesLoaded -->
+  <script defer src="https://cdn.jsdelivr.net/npm/masonry-layout@4.2.2/dist/masonry.pkgd.min.js" integrity="sha256-Nn1q/fx0H7SNLZMQ5Hw5JLaTRZp0yILA/FRexe19VdI=" crossorigin="anonymous"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+  <script defer src="/assets/js/mansory.js" type="text/javascript"></script>
+    
+  <!-- Medium Zoom JS -->
+  <script src="https://cdn.jsdelivr.net/npm/medium-zoom@1.0.6/dist/medium-zoom.min.js" integrity="sha256-EdPgYcPk/IIrw7FYeuJQexva49pVRZNmt3LculEr7zM=" crossorigin="anonymous"></script>
+  <script src="/assets/js/zoom.js"></script><!-- Load Common JS -->
+  <script src="/assets/js/common.js"></script>
+
+    <!-- MathJax -->
+  <script type="text/javascript">
+    window.MathJax = {
+      tex: {
+        tags: 'ams'
+      }
+    };
+  </script>
+  <script defer type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3.2.0/es5/tex-mml-chtml.js"></script>
+  <script defer src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-123722738-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'UA-123722738-1');
+  </script>
+  </body>
+</html>
+
