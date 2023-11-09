@@ -1,20 +1,25 @@
 ---
 layout: about
-title: about
+title:  About
 permalink: /
-subtitle: Deep Learning Researcher/Engineer
+subtitle: Undergraduate Researcher
 
 profile:
   align: right
-  image: yy.jpg
+  image: headshot.jpg
   address: >
 
 news: true  # includes a list of news items
 selected_papers: true # includes a list of papers marked as "selected={true}"
 social: true  # includes social icons at the bottom of the page
 ---
+Hi there!  I am a sophomore studying Mathematics and Computer Science at Cornell University where I'm fortunate to be working with with [Abe Davis](http://abedavis.com) on Computer Graphics and Machine Learning research.  
 
-I work as Sr. Staff Deep Learning Engineer at [Qualcomm AI Research](https://www.qualcomm.com/research/artificial-intelligence/ai-research?cmpid=fofyus221808&gclid=Cj0KCQiA0p2QBhDvARIsAACSOOM3Dpz826NbHIO_FaBcb4FDeoXz0nVAd4w5zkCrpDe2F_V2syhq07waAs3VEALw_wcB) in San Diego. My research interests include deep generative models, neural data compression (image/video/speech compression), and machine learning for combinatorial optimization (e.g., graph-level compiler optimization). I am passionate about designing deep learning solutions to challenging problems and deploying them to edge devices. 
+My research focuses on using mathematical tools and machine learning to find useful representations of real-world object 
+that can capture not only the shape, but also the dynamics of the real world. Currently, I am interested in 3D shape representation, reconstructions, and various deep learning approaches for object and scene re-simulation.
 
-I received my Ph.D. from the Ohio State University in 2015 on wireless networking. Before joining AI Research, I worked on wireless physical layer design (reference signal, channel estimation, tracking loop), channel coding design, and standardization for 5G NR ([patent]({{ site.baseurl }}{% link _pages/patent.md %})). 
+
+
+[CV](/assets/pdf/resume.pdf) / [Email](mailto:zk66@cornell.edu) / [Github](https://github.com/zzigak) / [LinkedIn](https://www.linkedin.com/in/zigakovacic/)/ [X](https://twitter.com/zzigakovacic)
+
 

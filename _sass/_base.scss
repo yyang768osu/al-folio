@@ -107,7 +107,7 @@ blockquote {
   box-shadow: none;
   border-bottom: 1px solid var(--global-divider-color);
   background-color: var(--global-bg-color);
-  opacity: 0.95;
+  opacity: 1; //was 0.95
 }
 .navbar .dropdown-menu {
   background-color: var(--global-bg-color);
@@ -244,11 +244,11 @@ blockquote {
 // Footer
 footer.fixed-bottom {
   background-color: var(--global-footer-bg-color);
-  font-size: 0.75rem;
+  font-size: 0.01rem;
   .container {
     color: var(--global-footer-text-color);
-    padding-top: 9px;
-    padding-bottom: 8px;
+    padding-top: 1px;
+    padding-bottom: 1px;
   }
   a {
     color: var(--global-footer-link-color);
@@ -261,9 +261,9 @@ footer.fixed-bottom {
 
 footer.sticky-bottom {
   border-top: 1px solid var(--global-divider-color);
-  padding-top: 40px;
-  padding-bottom: 40px;
-  font-size: 0.9rem;
+  padding-top: 1px;
+  padding-bottom: 1px;
+  font-size: 0.01rem;
 }
 
 
@@ -438,7 +438,7 @@ footer.sticky-bottom {
           border: 1px solid var(--global-theme-color);
         }
         .teaser{
-          @media screen and (max-width: 600px) {
+          @media screen and (max-width: 800px) {
             display: none;
           }
         }
@@ -583,7 +583,7 @@ html.transition *:after {
 
 .progress-container {
   width: 100%;
-  height: .25rem;
+  height: 0rem;
   background: var(--global-bg-color);
   opacity: 0.9;
 }
@@ -592,5 +592,5 @@ html.transition *:after {
   width: 0%;
   height: .25rem;
   background: var(--global-theme-color);
-  opacity: 0.9;
+  opacity: 0;
 }
